@@ -50,7 +50,7 @@ class CommandExecutor(ABC):
 class ProfilerCommandExecutor(CommandExecutor):
 
   def execute_command(self, command, device):
-    config, error = self.create_config(command)
+    config, error = self.create_config(command, device.get_android_sdk_version())
     if error is not None:
       return error
     error = self.prepare_device(command, device, config)
@@ -77,9 +77,10 @@ class ProfilerCommandExecutor(CommandExecutor):
       open_trace(host_file, PERFETTO_WEB_UI_ADDRESS)
     return None
 
-  def create_config(self, command):
+  def create_config(self, command, android_sdk_version):
     if command.perfetto_config in PREDEFINED_PERFETTO_CONFIGS:
-      return PREDEFINED_PERFETTO_CONFIGS[command.perfetto_config](command)
+      return PREDEFINED_PERFETTO_CONFIGS[command.perfetto_config](
+          command, android_sdk_version)
     else:
       return build_custom_config(command)
 
