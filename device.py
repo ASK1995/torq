@@ -200,26 +200,5 @@ class AdbDevice:
   def get_android_sdk_version(self):
     return int(self.get_prop("ro.build.version.sdk"))
 
-  def get_num_cpus(self):
-    raise NotImplementedError
-
-  def get_memory(self):
-    raise NotImplementedError
-
-  def get_max_num_cpus(self):
-    raise NotImplementedError
-
-  def get_max_memory(self):
-    raise NotImplementedError
-
-  def set_hw_config(self, hw_config):
-    raise NotImplementedError
-
-  def set_num_cpus(self, num_cpus):
-    raise NotImplementedError
-
-  def set_memory(self, memory):
-    raise NotImplementedError
-
   def simpleperf_event_exists(self, simpleperf_event):
     raise NotImplementedError

@@ -169,31 +169,6 @@ class AppStartupCommandExecutor(ProfilerCommandExecutor):
     return device.start_package(command.app)
 
 
-class HWCommandExecutor(CommandExecutor):
-
-  def execute_command(self, hw_command, device):
-    match hw_command.get_type():
-      case "hw set":
-        return self.execute_hw_set_command(device, hw_command.hw_config,
-                                           hw_command.num_cpus,
-                                           hw_command.memory)
-      case "hw get":
-        return self.execute_hw_get_command(device)
-      case "hw list":
-        return self.execute_hw_list_command(device)
-      case _:
-        raise ValueError("Invalid hw subcommand was used.")
-
-  def execute_hw_set_command(self, device, hw_config, num_cpus, memory):
-    return None
-
-  def execute_hw_get_command(self, device):
-    return None
-
-  def execute_hw_list_command(self, device):
-    return None
-
-
 class ConfigCommandExecutor(CommandExecutor):
 
   def execute(self, command, device):
