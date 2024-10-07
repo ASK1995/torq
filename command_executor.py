@@ -18,11 +18,12 @@ import time
 from abc import ABC, abstractmethod
 from config_builder import PREDEFINED_PERFETTO_CONFIGS, build_custom_config
 from open_ui import open_trace
+from device import SIMPLEPERF_TRACE_FILE
 
 PERFETTO_TRACE_FILE = "/data/misc/perfetto-traces/trace.perfetto-trace"
 PERFETTO_BOOT_TRACE_FILE = "/data/misc/perfetto-traces/boottrace.perfetto-trace"
-PERFETTO_WEB_UI_ADDRESS = "https://ui.perfetto.dev"
-PERFETTO_TRACE_START_DELAY_SECS = 0.5
+WEB_UI_ADDRESS = "https://ui.perfetto.dev"
+TRACE_START_DELAY_SECS = 0.5
 
 
 class CommandExecutor(ABC):
@@ -58,7 +59,10 @@ class ProfilerCommandExecutor(CommandExecutor):
       return error
     host_file = None
     for run in range(1, command.runs + 1):
-      host_file = f"{command.out_dir}/trace-{run}.perfetto-trace"
+      if command.profiler == "perfetto":
+        host_file = f"{command.out_dir}/trace-{run}.perfetto-trace"
+      else:
+        host_file = f"{command.out_dir}/perf-{run}.data"
       error = self.prepare_device_for_run(command, device, run)
       if error is not None:
         return error
@@ -74,7 +78,7 @@ class ProfilerCommandExecutor(CommandExecutor):
     if error is not None:
       return error
     if command.use_ui:
-      open_trace(host_file, PERFETTO_WEB_UI_ADDRESS)
+      open_trace(host_file, WEB_UI_ADDRESS)
     return None
 
   def create_config(self, command):
@@ -87,15 +91,21 @@ class ProfilerCommandExecutor(CommandExecutor):
     return None
 
   def prepare_device_for_run(self, command, device, run):
-    device.remove_file(PERFETTO_TRACE_FILE)
+    if command.profiler == "perfetto":
+      device.remove_file(PERFETTO_TRACE_FILE)
+    else:
+      device.remove_file(SIMPLEPERF_TRACE_FILE)
 
   def execute_run(self, command, device, config, run):
     print("Performing run %s" % run)
-    process = device.start_perfetto_trace(config)
-    time.sleep(PERFETTO_TRACE_START_DELAY_SECS)
+    if command.profiler == "perfetto":
+      process = device.start_perfetto_trace(config)
+    else:
+      process = device.start_simpleperf_trace(command)
+    time.sleep(TRACE_START_DELAY_SECS)
     error = self.trigger_system_event(command, device)
     if error is not None:
-      device.kill_pid("perfetto")
+      device.kill_pid(command.profiler)
       return error
     process.wait()
 
@@ -103,7 +113,10 @@ class ProfilerCommandExecutor(CommandExecutor):
     return None
 
   def retrieve_perf_data(self, command, device, host_file):
-    device.pull_file(PERFETTO_TRACE_FILE, host_file)
+    if command.profiler == "perfetto":
+      device.pull_file(PERFETTO_TRACE_FILE, host_file)
+    else:
+      device.pull_file(SIMPLEPERF_TRACE_FILE, host_file)
 
   def cleanup(self, command, device):
     return None

@@ -25,6 +25,7 @@ from validation_error import ValidationError
 from torq import DEFAULT_DUR_MS, DEFAULT_OUT_DIR, PREDEFINED_PERFETTO_CONFIGS
 
 PROFILER_COMMAND_TYPE = "profiler"
+PROFILER_TYPE = "perfetto"
 TEST_ERROR_MSG = "test-error"
 TEST_EXCEPTION = Exception(TEST_ERROR_MSG)
 TEST_VALIDATION_ERROR = ValidationError(TEST_ERROR_MSG, None)
@@ -45,7 +46,7 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
 
   def setUp(self):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "custom", None, DEFAULT_OUT_DIR, DEFAULT_DUR_MS,
+        PROFILER_COMMAND_TYPE, "custom", PROFILER_TYPE, DEFAULT_OUT_DIR, DEFAULT_DUR_MS,
         None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False, None, None, None,
         None)
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,
@@ -234,7 +235,7 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
 
   def setUp(self):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "user-switch", None, DEFAULT_OUT_DIR,
+        PROFILER_COMMAND_TYPE, "user-switch", PROFILER_TYPE, DEFAULT_OUT_DIR,
         DEFAULT_DUR_MS, None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False,
         None, None, None, None)
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,
@@ -358,9 +359,9 @@ class BootCommandExecutorUnitTest(unittest.TestCase):
 
   def setUp(self):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "boot", None, DEFAULT_OUT_DIR, TEST_DURATION,
-        None, 1, None, DEFAULT_PERFETTO_CONFIG, TEST_DURATION, False, None,
-        None, None, None)
+        PROFILER_COMMAND_TYPE, "boot", PROFILER_TYPE, DEFAULT_OUT_DIR,
+        TEST_DURATION, None, 1, None, DEFAULT_PERFETTO_CONFIG, TEST_DURATION,
+        False, None, None, None, None)
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,
                                             serial=TEST_SERIAL)
     self.mock_device.check_device_connection.return_value = None
@@ -472,7 +473,7 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
 
   def setUp(self):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "app-startup", None, DEFAULT_OUT_DIR,
+        PROFILER_COMMAND_TYPE, "app-startup", PROFILER_TYPE, DEFAULT_OUT_DIR,
         DEFAULT_DUR_MS, TEST_PACKAGE_1, 1, None, DEFAULT_PERFETTO_CONFIG, None,
         False, None, None, None, None)
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,

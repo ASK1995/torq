@@ -163,6 +163,13 @@ def verify_args(args):
         ("Set --event %s --to-user <user-id> to perform a %s."
          % (args.event, args.event)))
 
+  # TODO(b/374313202): Support for simpleperf boot event will
+  #                    be added in the future
+  if args.event == "boot" and args.profiler == "simpleperf":
+    return None, ValidationError(
+        "Boot event is not yet implemented for simpleperf.",
+        "Please try another event.")
+
   if args.app is not None and args.event != "app-startup":
     return None, ValidationError(
         ("Command is invalid because --app is passed and --event is not set"

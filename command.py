@@ -79,7 +79,9 @@ class ProfilerCommand(Command):
   def validate(self, device):
     print("Further validating arguments of ProfilerCommand.")
     if self.simpleperf_event is not None:
-      device.simpleperf_event_exists(self.simpleperf_event)
+      error = device.simpleperf_event_exists(self.simpleperf_event)
+      if error is not None:
+        return error
     match self.event:
       case "user-switch":
         return self.validate_user_switch(device)
