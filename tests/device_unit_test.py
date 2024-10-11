@@ -764,6 +764,26 @@ class DeviceUnitTest(unittest.TestCase):
 
     self.assertEqual(str(e.exception), TEST_FAILURE_MSG)
 
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def test_get_android_sdk_version_success(self, mock_subprocess_run):
+    mock_subprocess_run.return_value = self.generate_mock_completed_process(
+        stdout_string=b'%d\n' % ANDROID_SDK_VERSION_T)
+    adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+
+    prop_value = adbDevice.get_android_sdk_version()
+
+    self.assertEqual(prop_value, ANDROID_SDK_VERSION_T)
+
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def test_get_android_sdk_version_failure(self, mock_subprocess_run):
+    mock_subprocess_run.side_effect = TEST_EXCEPTION
+    adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+
+    with self.assertRaises(Exception) as e:
+      adbDevice.get_android_sdk_version()
+
+    self.assertEqual(str(e.exception), TEST_FAILURE_MSG)
+
 
 if __name__ == '__main__':
   unittest.main()
