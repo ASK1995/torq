@@ -827,10 +827,13 @@ class DeviceUnitTest(unittest.TestCase):
                                              b'task-clock'))
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
 
+    events = ["cpu-clock", "minor-faults"]
     # No exception is expected to be thrown
-    error = adbDevice.simpleperf_event_exists(["cpu-clock", "minor-faults"])
+    error = adbDevice.simpleperf_event_exists(events)
 
     self.assertEqual(error, None)
+    # Check that the list passed to the function is unchanged
+    self.assertEqual(events, ["cpu-clock", "minor-faults"])
 
   @mock.patch.object(subprocess, "run", autospec=True)
   def test_simpleperf_event_exists_failure(self, mock_subprocess_run):

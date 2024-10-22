@@ -213,7 +213,7 @@ class AdbDevice:
     return int(self.get_prop("ro.build.version.sdk"))
 
   def simpleperf_event_exists(self, simpleperf_events):
-    events_copy = simpleperf_events
+    events_copy = simpleperf_events.copy()
     grep_command = "grep"
     for event in simpleperf_events:
       grep_command += " -e " + event.lower()
