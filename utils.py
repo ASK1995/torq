@@ -16,7 +16,12 @@
 
 import os
 
-def does_path_exist(path: str):
+def path_exists(path: str):
   if path is None:
     return False
   return os.path.exists(os.path.expanduser(path))
+
+def dir_exists(path: str):
+  if path is None:
+    return False
+  return os.path.isdir(os.path.expanduser(path))

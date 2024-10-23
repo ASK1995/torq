@@ -20,7 +20,8 @@ from command import ProfilerCommand, ConfigCommand, OpenCommand
 from device import AdbDevice
 from validation_error import ValidationError
 from config_builder import PREDEFINED_PERFETTO_CONFIGS
-from utils import does_path_exist
+from utils import path_exists
+from validate_simpleperf import verify_simpleperf_args
 
 DEFAULT_DUR_MS = 10000
 MIN_DURATION_MS = 3000
@@ -72,6 +73,8 @@ def create_parser():
   parser.add_argument('--serial',
                       help=(('Specifies serial of the device that will be'
                              ' used.')))
+  parser.add_argument('--symbols',
+                      help='Specifies path to symbols library.')
   subparsers = parser.add_subparsers(dest='subcommands', help='Subcommands')
   config_parser = subparsers.add_parser('config',
                                         help=('The config subcommand used'
@@ -324,10 +327,17 @@ def verify_args(args):
            "\t torq pull lightweight to copy to ./lightweight.pbtxt\n"
            "\t torq pull memory to copy to ./memory.pbtxt"))
 
-  if args.subcommands == "open" and not does_path_exist(args.file_path):
+  if args.subcommands == "open" and not path_exists(args.file_path):
     return None, ValidationError(
         "Command is invalid because %s is an invalid file path."
         % args.file_path, "Make sure your file exists.")
+
+  if args.profiler == "simpleperf":
+    args, error = verify_simpleperf_args(args)
+    if error is not None:
+      return None, error
+  else:
+    args.scripts_path = None
 
   return args, None
 

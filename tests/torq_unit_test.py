@@ -24,6 +24,7 @@ from torq import create_parser, verify_args, get_command_type,\
 TEST_USER_ID = 10
 TEST_PACKAGE = "com.android.contacts"
 TEST_FILE = "file.pbtxt"
+SYMBOLS_PATH = "/folder/symbols"
 
 
 class TorqUnitTest(unittest.TestCase):
@@ -90,7 +91,11 @@ class TorqUnitTest(unittest.TestCase):
     with self.assertRaises(SystemExit):
       parser.parse_args()
 
-  def test_create_parser_valid_profiler_names(self):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  @mock.patch.object(os.path, "isdir", autospec=True)
+  def test_create_parser_valid_profiler_names(self, mock_isdir, mock_exists):
+    mock_isdir.return_value = True
+    mock_exists.return_value = True
     parser = self.set_up_parser("torq.py -p perfetto")
 
     args = parser.parse_args()
@@ -99,7 +104,8 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(error, None)
     self.assertEqual(args.profiler, "perfetto")
 
-    parser = self.set_up_parser("torq.py -p simpleperf")
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
+                                % SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -482,8 +488,14 @@ class TorqUnitTest(unittest.TestCase):
                                         " torq --event app-startup --app"
                                         " <package-name>"))
 
-  def test_verify_args_profiler_and_simpleperf_event_valid_dependencies(self):
-    parser = self.set_up_parser("torq.py -p simpleperf")
+  @mock.patch.object(os.path, "exists", autospec=True)
+  @mock.patch.object(os.path, "isdir", autospec=True)
+  def test_verify_args_profiler_and_simpleperf_event_valid_dependencies(self,
+      mock_isdir, mock_exists):
+    mock_isdir.return_value = True
+    mock_exists.return_value = True
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
+                                % SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -492,7 +504,8 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(len(args.simpleperf_event), 1)
     self.assertEqual(args.simpleperf_event[0], "cpu-cycles")
 
-    parser = self.set_up_parser("torq.py -p simpleperf -s cpu-cycles")
+    parser = self.set_up_parser("torq.py -p simpleperf -s cpu-cycles "
+                                "--symbols %s" % SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -707,9 +720,15 @@ class TorqUnitTest(unittest.TestCase):
                                         " include power/cpu_idle in the"
                                         " config."))
 
-  def test_verify_args_multiple_valid_simpleperf_events(self):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  @mock.patch.object(os.path, "isdir", autospec=True)
+  def test_verify_args_multiple_valid_simpleperf_events(self, mock_isdir,
+      mock_exists):
+    mock_isdir.return_value = True
+    mock_exists.return_value = True
     parser = self.set_up_parser(("torq.py -p simpleperf -s cpu-cycles"
-                                 " -s instructions"))
+                                 " -s instructions --symbols %s"
+                                 % SYMBOLS_PATH))
 
     args = parser.parse_args()
     args, error = verify_args(args)
