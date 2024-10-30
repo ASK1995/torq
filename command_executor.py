@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+import datetime
 import time
 from abc import ABC, abstractmethod
 from config_builder import PREDEFINED_PERFETTO_CONFIGS, build_custom_config
@@ -60,11 +61,12 @@ class ProfilerCommandExecutor(CommandExecutor):
       return error
     host_file = None
     for run in range(1, command.runs + 1):
+      timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
       if command.profiler == "perfetto":
-        host_file = f"{command.out_dir}/trace-{run}.perfetto-trace"
+        host_file = f"{command.out_dir}/trace-{timestamp}.perfetto-trace"
       else:
-        host_file = f"{command.out_dir}/perf-{run}.data"
-      error = self.prepare_device_for_run(command, device, run)
+        host_file = f"{command.out_dir}/perf-{timestamp}.data"
+      error = self.prepare_device_for_run(command, device)
       if error is not None:
         return error
       error = self.execute_run(command, device, config, run)
@@ -93,7 +95,7 @@ class ProfilerCommandExecutor(CommandExecutor):
   def prepare_device(self, command, device, config):
     return None
 
-  def prepare_device_for_run(self, command, device, run):
+  def prepare_device_for_run(self, command, device):
     if command.profiler == "perfetto":
       device.remove_file(PERFETTO_TRACE_FILE)
     else:
@@ -127,8 +129,8 @@ class ProfilerCommandExecutor(CommandExecutor):
 
 class UserSwitchCommandExecutor(ProfilerCommandExecutor):
 
-  def prepare_device_for_run(self, command, device, run):
-    super().prepare_device_for_run(command, device, run)
+  def prepare_device_for_run(self, command, device):
+    super().prepare_device_for_run(command, device)
     current_user = device.get_current_user()
     if command.from_user != current_user:
       dur_seconds = command.dur_ms / 1000
@@ -155,7 +157,7 @@ class BootCommandExecutor(ProfilerCommandExecutor):
   def prepare_device(self, command, device, config):
     device.write_to_file("/data/misc/perfetto-configs/boottrace.pbtxt", config)
 
-  def prepare_device_for_run(self, command, device, run):
+  def prepare_device_for_run(self, command, device):
     device.remove_file(PERFETTO_BOOT_TRACE_FILE)
     device.set_prop("persist.debug.perfetto.boottrace", "1")
 
