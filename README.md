@@ -56,6 +56,8 @@ cpu-cycles and instructions, are collected.
 config.
 ### ./torq config show memory
 - Print the contents of the memory predefined Perfetto config to the terminal.
+### ./torq open trace.perfetto-trace
+- Open a trace in the perfetto UI.
 ### ./torq -d 10000 --exclude-ftrace-event power/cpu_idle
 - Run a custom event for 10 seconds, using the "default" predefined Perfetto
 config, in which the ftrace event, power/cpu_idle, is not collected.
@@ -82,6 +84,7 @@ config, in which the ftrace event, power/cpu_idle, is not collected.
 | `config list`                           | Subcommand to list the predefined Perfetto configs (`default`, `lightweight`, `memory`).                                                                                                                                                                                           |                                                                                              |                                      |
 | `config show <config-name>`             | Subcommand to print the contents of a predefined Perfetto config to the terminal.                                                                                                                                                                                                  | `default`, `lightweight`, `memory`                                                           |                                      |
 | `config pull <config-name> [file-path]` | Subcommand to download a predefined Perfetto config to a specified local file path.                                                                                                                                                                                                | <config-name>: `default`, `lightweight`, `memory`<br/> [file-path]: Any local file path      | [file-path]: `./<config-name>.pbtxt` |
+| `open <file-path>`                      | Subcommand to open a Perfetto or Simpleperf trace in the Perfetto UI.                                                                                                                                                                                                              | Any local path to a Perfetto or Simpleperf trace file                                        |                                      |
 
 ## Functionality Coming Soon
 

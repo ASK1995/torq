@@ -27,6 +27,7 @@ python_defaults {
         "device.py",
         "config_builder.py",
         "open_ui.py",
+        "utils.py",
     ],
 }
 
