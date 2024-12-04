@@ -18,6 +18,7 @@ import os
 import subprocess
 from utils import path_exists, dir_exists
 from validation_error import ValidationError
+from handle_input import HandleInput
 
 TORQ_TEMP_DIR = "/tmp/.torq"
 TEMP_CACHE_BUILDER_SCRIPT = TORQ_TEMP_DIR + "/binary_cache_builder.py"
@@ -65,42 +66,36 @@ def verify_simpleperf_args(args):
   return args, None
 
 def download_simpleperf_scripts():
-  i = 0
-  while i <= 3:
-    i += 1
-    confirmation = input("You do not have an Android Root configured with "
-                         "the simpleperf directory. To use simpleperf, torq "
-                         "will download simpleperf scripts to '%s'. "
-                         "Are you ok with this download? [Y/N]: "
-                         % TORQ_TEMP_DIR)
+  fail_suggestion = ("Set $ANDROID_BUILD_TOP to your android root "
+                     "path and make sure you have $ANDROID_BUILD_TOP"
+                     "/system/extras/simpleperf/scripts "
+                     "downloaded.")
 
-    if confirmation.lower() == "y":
-      break
-    elif confirmation.lower() == "n":
-      return ValidationError("Did not download simpleperf scripts.",
-                             "Set $ANDROID_BUILD_TOP to your android root "
-                             "path and make sure you have $ANDROID_BUILD_TOP"
-                             "/system/extras/simpleperf/scripts "
-                             "downloaded.")
-    if i == 3:
-      return ValidationError("Invalid inputs.",
-                             "Set $ANDROID_BUILD_TOP to your android root "
-                             "path and make sure you have $ANDROID_BUILD_TOP"
-                             "/system/extras/simpleperf/scripts "
-                             "downloaded.")
+  def download_accepted_callback():
+    subprocess.run(("mkdir -p %s && wget -P %s "
+                    "https://android.googlesource.com/platform/system/extras"
+                    "/+archive/refs/heads/main/simpleperf/scripts.tar.gz "
+                    "&& tar -xvzf %s/scripts.tar.gz -C %s"
+                    % (TORQ_TEMP_DIR, TORQ_TEMP_DIR, TORQ_TEMP_DIR,
+                       TORQ_TEMP_DIR)),
+                   shell=True)
 
-  subprocess.run(("mkdir -p %s && wget -P %s "
-                 "https://android.googlesource.com/platform/system/extras"
-                 "/+archive/refs/heads/main/simpleperf/scripts.tar.gz "
-                 "&& tar -xvzf %s/scripts.tar.gz -C %s"
-                  % (TORQ_TEMP_DIR, TORQ_TEMP_DIR, TORQ_TEMP_DIR,
-                     TORQ_TEMP_DIR)),
-                 shell=True)
+    if not path_exists(TEMP_CACHE_BUILDER_SCRIPT):
+      raise Exception("Error while downloading simpleperf scripts. Try again "
+                      "or set $ANDROID_BUILD_TOP to your android root path and "
+                      "make sure you have $ANDROID_BUILD_TOP/system/extras/"
+                      "simpleperf/scripts downloaded.")
+    return None
 
-  if not path_exists(TEMP_CACHE_BUILDER_SCRIPT):
-    raise Exception("Error while downloading simpleperf scripts. Try again "
-                    "or set $ANDROID_BUILD_TOP to your android root path and "
-                    "make sure you have $ANDROID_BUILD_TOP/system/extras/"
-                    "simpleperf/scripts downloaded.")
+  def rejected_callback():
+    return ValidationError("Did not download simpleperf scripts.",
+                           fail_suggestion)
 
-  return None
+  input_handler = HandleInput(("You do not have an Android Root configured "
+                               "with the simpleperf directory. To use "
+                               "simpleperf, torq will download simpleperf "
+                               "scripts to '%s'. Are you ok with this download?"
+                               " [Y/N]: " % TORQ_TEMP_DIR), fail_suggestion,
+                              download_accepted_callback, rejected_callback)
+
+  return input_handler.handle_input()

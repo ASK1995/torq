@@ -29,6 +29,7 @@ python_defaults {
         "open_ui.py",
         "utils.py",
         "validate_simpleperf.py",
+        "handle_input.py",
     ],
 }
 
