@@ -30,9 +30,8 @@ SYMBOLS_PATH = "/folder/symbols"
 class TorqUnitTest(unittest.TestCase):
 
   def set_up_parser(self, command_string):
-    parser = create_parser()
     sys.argv = command_string.split()
-    return parser
+    return create_parser()
 
   # TODO(b/285191111): Parameterize the test functions.
   def test_create_parser_default_values(self):
@@ -758,18 +757,6 @@ class TorqUnitTest(unittest.TestCase):
 
   def test_verify_args_invalid_mixing_of_profiler_and_config_subcommand(self):
     parser = self.set_up_parser("torq.py -d 20000 config pull lightweight")
-
-    args = parser.parse_args()
-    args, error = verify_args(args)
-
-    self.assertEqual(error.message, ("Command is invalid because profiler"
-                                     " command is followed by a config"
-                                     " command."))
-    self.assertEqual(error.suggestion, ("Remove the 'config' subcommand to"
-                                        " profile the device instead."))
-
-  def test_create_parser_invalid_mixing_of_profiler_and_config_subcommand(self):
-    parser = self.set_up_parser("torq.py config pull lightweight -d 20000")
 
     with self.assertRaises(SystemExit):
       parser.parse_args()

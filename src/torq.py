@@ -20,9 +20,12 @@ from .command import ProfilerCommand, ConfigCommand, OpenCommand
 from .device import AdbDevice
 from .validation_error import ValidationError
 from .config_builder import PREDEFINED_PERFETTO_CONFIGS
-from .utils import path_exists
+from .utils import path_exists, set_default_subparser
 from .validate_simpleperf import verify_simpleperf_args
 from .vm import add_vm_parser, create_vm_command
+
+# Add default parser capability to argparse
+argparse.ArgumentParser.set_default_subparser = set_default_subparser
 
 DEFAULT_DUR_MS = 10000
 MIN_DURATION_MS = 3000
@@ -33,50 +36,61 @@ def create_parser():
   parser = argparse.ArgumentParser(prog='torq command',
                                    description=('Torq CLI tool for performance'
                                                 ' tests.'))
-  parser.add_argument('-e', '--event',
+  # Global options
+  # NOTE: All global options must have the 'nargs' option set to an int.
+  parser.add_argument('--serial', nargs=1,
+                      help=(('Specifies serial of the device that will be'
+                             ' used.')))
+
+  # Subparsers
+  subparsers = parser.add_subparsers(dest='subcommands', help='Subcommands')
+
+  # Profiler options
+  profiler_parser = subparsers.add_parser('profiler', help=('Profiler subcommand'
+                                                            ' used to trace and'
+                                                            ' profile Android'))
+  profiler_parser.add_argument('-e', '--event',
                       choices=['boot', 'user-switch', 'app-startup', 'custom'],
                       default='custom', help='The event to trace/profile.')
-  parser.add_argument('-p', '--profiler', choices=['perfetto', 'simpleperf'],
+  profiler_parser.add_argument('-p', '--profiler', choices=['perfetto', 'simpleperf'],
                       default='perfetto', help='The performance data source.')
-  parser.add_argument('-o', '--out-dir', default=DEFAULT_OUT_DIR,
+  profiler_parser.add_argument('-o', '--out-dir', default=DEFAULT_OUT_DIR,
                       help='The path to the output directory.')
-  parser.add_argument('-d', '--dur-ms', type=int, default=DEFAULT_DUR_MS,
+  profiler_parser.add_argument('-d', '--dur-ms', type=int, default=DEFAULT_DUR_MS,
                       help=('The duration (ms) of the event. Determines when'
                             ' to stop collecting performance data.'))
-  parser.add_argument('-a', '--app',
+  profiler_parser.add_argument('-a', '--app',
                       help='The package name of the app we want to start.')
-  parser.add_argument('-r', '--runs', type=int, default=1,
+  profiler_parser.add_argument('-r', '--runs', type=int, default=1,
                       help=('The number of times to run the event and'
                             ' capture the perf data.'))
-  parser.add_argument('-s', '--simpleperf-event', action='append',
+  profiler_parser.add_argument('-s', '--simpleperf-event', action='append',
                       help=('Simpleperf supported events to be collected.'
                             ' e.g. cpu-cycles, instructions'))
-  parser.add_argument('--perfetto-config', default='default',
+  profiler_parser.add_argument('--perfetto-config', default='default',
                       help=('Predefined perfetto configs can be used:'
                             ' %s. A filepath with a custom config could'
                             ' also be provided.'
                             % (", ".join(PREDEFINED_PERFETTO_CONFIGS.keys()))))
-  parser.add_argument('--between-dur-ms', type=int, default=DEFAULT_DUR_MS,
+  profiler_parser.add_argument('--between-dur-ms', type=int, default=DEFAULT_DUR_MS,
                       help='Time (ms) to wait before executing the next event.')
-  parser.add_argument('--ui', action=argparse.BooleanOptionalAction,
+  profiler_parser.add_argument('--ui', action=argparse.BooleanOptionalAction,
                       help=('Specifies opening of UI visualization tool'
                             ' after profiling is complete.'))
-  parser.add_argument('--excluded-ftrace-events', action='append',
+  profiler_parser.add_argument('--excluded-ftrace-events', action='append',
                       help=('Excludes specified ftrace event from the perfetto'
                             ' config events.'))
-  parser.add_argument('--included-ftrace-events', action='append',
+  profiler_parser.add_argument('--included-ftrace-events', action='append',
                       help=('Includes specified ftrace event in the perfetto'
                             ' config events.'))
-  parser.add_argument('--from-user', type=int,
+  profiler_parser.add_argument('--from-user', type=int,
                       help='The user id from which to start the user switch')
-  parser.add_argument('--to-user', type=int,
+  profiler_parser.add_argument('--to-user', type=int,
                       help='The user id of user that system is switching to.')
-  parser.add_argument('--serial',
-                      help=(('Specifies serial of the device that will be'
-                             ' used.')))
-  parser.add_argument('--symbols',
+  profiler_parser.add_argument('--symbols',
                       help='Specifies path to symbols library.')
-  subparsers = parser.add_subparsers(dest='subcommands', help='Subcommands')
+
+  # Config options
   config_parser = subparsers.add_parser('config',
                                         help=('The config subcommand used'
                                               ' to list and show the'
@@ -96,6 +110,16 @@ def create_parser():
                                   choices=['lightweight', 'default', 'memory'],
                                   help=('Name of the predefined perfetto'
                                         ' config to print.'))
+  config_show_parser.add_argument('-d', '--dur-ms', type=int, default=DEFAULT_DUR_MS,
+                      help=('The duration (ms) of the event. Determines when'
+                            ' to stop collecting performance data.'))
+  config_show_parser.add_argument('--excluded-ftrace-events', action='append',
+                      help=('Excludes specified ftrace event from the perfetto'
+                            ' config events.'))
+  config_show_parser.add_argument('--included-ftrace-events', action='append',
+                      help=('Includes specified ftrace event in the perfetto'
+                            ' config events.'))
+
   config_pull_parser = config_subparsers.add_parser('pull',
                                                     help=('Command to copy'
                                                           ' a predefined config'
@@ -107,6 +131,17 @@ def create_parser():
   config_pull_parser.add_argument('file_path', nargs='?',
                                   help=('File path to copy the predefined'
                                         ' config to'))
+  config_pull_parser.add_argument('-d', '--dur-ms', type=int, default=DEFAULT_DUR_MS,
+                      help=('The duration (ms) of the event. Determines when'
+                            ' to stop collecting performance data.'))
+  config_pull_parser.add_argument('--excluded-ftrace-events', action='append',
+                      help=('Excludes specified ftrace event from the perfetto'
+                            ' config events.'))
+  config_pull_parser.add_argument('--included-ftrace-events', action='append',
+                      help=('Includes specified ftrace event in the perfetto'
+                            ' config events.'))
+
+  # Open options
   open_parser = subparsers.add_parser('open',
                                       help=('The open subcommand is used '
                                             'to open trace files in the '
@@ -119,6 +154,9 @@ def create_parser():
 
   # Configure perfetto in virtualized Android
   add_vm_parser(subparsers)
+
+  # Set 'profiler' as the default parser
+  parser.set_default_subparser('profiler')
 
   return parser
 
@@ -137,18 +175,9 @@ def user_changed_default_arguments(args):
               args.excluded_ftrace_events is not None,
               args.included_ftrace_events is not None,
               args.from_user is not None,
-              args.to_user is not None,
-              args.serial is not None])
+              args.to_user is not None])
 
-
-def verify_args(args):
-  if (args.subcommands is not None and
-      user_changed_default_arguments(args)):
-    return None, ValidationError(
-        ("Command is invalid because profiler command is followed by a config"
-         " command."),
-        "Remove the 'config' subcommand to profile the device instead.")
-
+def verify_profiler_args(args):
   if args.out_dir != DEFAULT_OUT_DIR and not os.path.isdir(args.out_dir):
     return None, ValidationError(
         ("Command is invalid because --out-dir is not a valid directory"
@@ -309,7 +338,23 @@ def verify_args(args):
                         % (event, event, event, event)
                         for event in ftrace_event_intersection)))
 
-  if args.subcommands == "config" and args.config_subcommand is None:
+  if args.profiler == "simpleperf" and args.simpleperf_event is None:
+    args.simpleperf_event = ['cpu-cycles']
+
+  if args.ui is None:
+    args.ui = args.runs == 1
+
+  if args.profiler == "simpleperf":
+    args, error = verify_simpleperf_args(args)
+    if error is not None:
+      return None, error
+  else:
+    args.scripts_path = None
+
+  return args, None
+
+def verify_config_args(args):
+  if args.config_subcommand is None:
     return None, ValidationError(
         ("Command is invalid because torq config cannot be called"
          " without a subcommand."),
@@ -318,13 +363,7 @@ def verify_args(args):
          "\t torq config show\n"
          "\t torq config pull\n"))
 
-  if args.profiler == "simpleperf" and args.simpleperf_event is None:
-    args.simpleperf_event = ['cpu-cycles']
-
-  if args.ui is None:
-    args.ui = args.runs == 1
-
-  if args.subcommands == "config" and args.config_subcommand == "pull":
+  if args.config_subcommand == "pull":
     if args.file_path is None:
       args.file_path = "./" + args.config_name + ".pbtxt"
     elif not os.path.isfile(args.file_path):
@@ -336,20 +375,28 @@ def verify_args(args):
            "\t torq pull lightweight to copy to ./lightweight.pbtxt\n"
            "\t torq pull memory to copy to ./memory.pbtxt"))
 
-  if args.subcommands == "open" and not path_exists(args.file_path):
+  return args, None
+
+def verify_open_args(args):
+  if not path_exists(args.file_path):
     return None, ValidationError(
         "Command is invalid because %s is an invalid file path."
         % args.file_path, "Make sure your file exists.")
 
-  if args.profiler == "simpleperf":
-    args, error = verify_simpleperf_args(args)
-    if error is not None:
-      return None, error
-  else:
-    args.scripts_path = None
-
   return args, None
 
+def verify_args(args):
+  match args.subcommands:
+    case "profiler":
+      return verify_profiler_args(args)
+    case "config":
+      return verify_config_args(args)
+    case "open":
+      return verify_open_args(args)
+    case "vm":
+      return args, None
+    case _:
+      raise ValueError("Invalid command type used")
 
 def create_profiler_command(args):
   return ProfilerCommand("profiler", args.event, args.profiler, args.out_dir,
@@ -382,16 +429,17 @@ def create_config_command(args):
 
 
 def get_command_type(args):
-  command = None
-  if args.subcommands is None:
-    command = create_profiler_command(args)
-  if args.subcommands == "config":
-    command = create_config_command(args)
-  if args.subcommands == "open":
-    command = OpenCommand(args.file_path, args.use_trace_processor)
-  if args.subcommands == "vm":
-    command = create_vm_command(args)
-  return command
+  match args.subcommands:
+    case "profiler":
+      return create_profiler_command(args)
+    case "config":
+      return create_config_command(args)
+    case "open":
+      return OpenCommand(args.file_path, args.use_trace_processor)
+    case "vm":
+      return create_vm_command(args)
+    case _:
+      raise ValueError("Invalid command type used")
 
 
 def print_error(error):
@@ -408,7 +456,8 @@ def main():
     print_error(error)
     return
   command = get_command_type(args)
-  device = AdbDevice(args.serial)
+  serial = args.serial[0] if args.serial else None
+  device = AdbDevice(serial)
   error = command.execute(device)
   if error is not None:
     print_error(error)

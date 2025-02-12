@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+import argparse
 import os
 import signal
 import subprocess
@@ -67,3 +68,37 @@ def wait_for_output(pattern, process, timeout):
       process.stderr = None
       return False
   return True  # Timed out
+
+def set_default_subparser(self, name):
+  """
+  A hack to add a default subparser to an argparse.ArgumentParser
+  class. This will add the default subparser after all the global
+  options in sys.argv.
+
+  NOTE: Only works properly if all the global options have the
+        'nargs' argument set to an integer.
+  """
+  subparser_found = False
+  insertion_idx = 1
+
+  # Get all global options
+  global_opts = {}
+  for action in self._actions:
+      for opt in action.option_strings:
+          global_opts[opt] = action.nargs
+
+  for idx, arg in enumerate(sys.argv[1:]):
+    if arg in ['-h', '--help']:
+      break
+    if arg in global_opts:
+      insertion_idx = idx + global_opts[arg] + 2
+  else:
+    for action in self._subparsers._actions:
+      if not isinstance(action, argparse._SubParsersAction):
+        continue
+      for sp_name in action._name_parser_map.keys():
+        if sp_name in sys.argv[1:]:
+          subparser_found = True
+    if not subparser_found:
+      # insert default subparser
+      sys.argv.insert(insertion_idx, name)
