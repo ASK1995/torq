@@ -232,6 +232,9 @@ class AdbDevice:
                             capture_output=True)
 
     if output is None or len(output.stdout) == 0:
+      if "not found" in output.stderr.decode("utf-8"):
+        return ValidationError("Simpleperf was not found in the device",
+                               "Push the simpleperf binary to the device")
       raise Exception("Error while validating simpleperf events.")
     lines = output.stdout.decode("utf-8").split("\n")
 

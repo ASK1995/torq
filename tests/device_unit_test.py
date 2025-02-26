@@ -857,6 +857,20 @@ class DeviceUnitTest(unittest.TestCase):
     self.assertEqual(error.suggestion, "Run adb shell simpleperf list to"
                                        " see valid simpleperf events.")
 
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def test_simpleperf_not_installed(self, mock_subprocess_run):
+    mock_subprocess_run.return_value = (
+        self.generate_mock_completed_process(
+            b'',
+            b'/system/bin/sh: simpleperf: inaccessible or not found\n')
+    )
+    adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+
+    error = adbDevice.simpleperf_event_exists(["cpu-clock", "minor-faults",
+                                               "List"])
+
+    self.assertEqual(error.message, "Simpleperf was not found in the device")
+    self.assertEqual(error.suggestion, "Push the simpleperf binary to the device")
 
 if __name__ == '__main__':
   unittest.main()
