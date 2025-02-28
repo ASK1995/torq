@@ -91,12 +91,11 @@ def download_simpleperf_scripts():
     return ValidationError("Did not download simpleperf scripts.",
                            fail_suggestion)
 
-  input_handler = HandleInput(("You do not have an Android Root configured "
-                               "with the simpleperf directory. To use "
-                               "simpleperf, torq will download simpleperf "
-                               "scripts to '%s'. Are you ok with this download?"
-                               " [Y/N]: " % TORQ_TEMP_DIR), fail_suggestion,
-                              {"y": download_accepted_callback,
-                               "n": rejected_callback})
-
-  return input_handler.handle_input()
+  return (HandleInput(("You do not have an Android Root configured "
+                      "with the simpleperf directory. To use "
+                      "simpleperf, torq will download simpleperf "
+                      "scripts to '%s'. Are you ok with this download?"
+                      " [Y/N]: " % TORQ_TEMP_DIR), fail_suggestion,
+                     {"y": download_accepted_callback,
+                      "n": rejected_callback})
+          .handle_input())
