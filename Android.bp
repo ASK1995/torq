@@ -21,6 +21,7 @@ python_defaults {
     name: "torq_defaults",
     srcs: [
         "src/**/*.py",
+        "tests/**/*utils.py",
     ],
 }
 
@@ -64,9 +65,9 @@ python_test_host {
 }
 
 python_test_host {
-    name: "perfetto_command_executor_unit_test",
-    main: "tests/perfetto_command_executor_unit_test.py",
-    srcs: ["tests/perfetto_command_executor_unit_test.py"],
+    name: "profiler_command_executor_unit_test",
+    main: "tests/profiler_command_executor_unit_test.py",
+    srcs: ["tests/profiler_command_executor_unit_test.py"],
     defaults: ["torq_defaults"],
     embedded_launcher: false,
     test_options: {

@@ -23,6 +23,7 @@ from src.command import ProfilerCommand
 from src.device import AdbDevice
 from src.validation_error import ValidationError
 from src.torq import DEFAULT_DUR_MS, DEFAULT_OUT_DIR
+from .test_utils import parameterized_profiler
 
 PROFILER_COMMAND_TYPE = "profiler"
 TEST_ERROR_MSG = "test-error"
@@ -43,31 +44,49 @@ ANDROID_SDK_VERSION_T = 33
 
 class ProfilerCommandExecutorUnitTest(unittest.TestCase):
 
-  def setUp(self):
+  def setUpSubtest(self, profiler):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "custom", "perfetto", DEFAULT_OUT_DIR, DEFAULT_DUR_MS,
-        None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False, None, None, None,
-        None, None, None)
+        PROFILER_COMMAND_TYPE, "custom", profiler, DEFAULT_OUT_DIR,
+        DEFAULT_DUR_MS, None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False,
+        None, None, None, None, None, None)
+    if profiler == "simpleperf":
+      self.command.symbols = "/"
+      self.command.scripts_path = "/"
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,
                                             serial=TEST_SERIAL)
     self.mock_device.check_device_connection.return_value = None
-    self.mock_device.get_android_sdk_version.return_value = ANDROID_SDK_VERSION_T
+    self.mock_device.get_android_sdk_version.return_value = (
+        ANDROID_SDK_VERSION_T)
+    self.mock_device.create_directory.return_value = None
 
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_one_run_and_use_ui_success(self, mock_process):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_one_profiler_run_and_use_ui_success(self, profiler,
+      mock_exists, mock_process, mock_run):
     with (mock.patch("src.command_executor.open_trace", autospec=True)
           as mock_open_trace):
       mock_open_trace.return_value = None
       self.command.use_ui = True
-      self.mock_device.start_perfetto_trace.return_value = mock_process
+      if profiler == "perfetto":
+        self.mock_device.start_perfetto_trace.side_effect = mock_process
+      else:
+        self.mock_device.start_simpleperf_trace.side_effect = mock_process
+      mock_exists.return_value = True
+      mock_run.return_value = None
 
       error = self.command.execute(self.mock_device)
 
       self.assertEqual(error, None)
       self.assertEqual(self.mock_device.pull_file.call_count, 1)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_one_run_no_dur_ms_success(self, mock_process):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_one_profiler_run_no_dur_ms_success(self, profiler,
+      mock_exists, mock_process, mock_run):
     def poll():
       # Send the SIGINT signal to the process to simulate a user pressing CTRL+C
       os.kill(os.getpid(), signal.SIGINT)
@@ -78,7 +97,12 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
       self.command.dur_ms = None
       mock_open_trace.return_value = None
       mock_process.poll = poll
-      self.mock_device.start_perfetto_trace.return_value = mock_process
+      if profiler == "perfetto":
+        self.mock_device.start_perfetto_trace.side_effect = mock_process
+      else:
+        self.mock_device.start_simpleperf_trace.side_effect = mock_process
+      mock_exists.return_value = True
+      mock_run.return_value = None
 
       error = self.command.execute(self.mock_device)
 
@@ -88,58 +112,49 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
   @mock.patch.object(os.path, "exists", autospec=True)
-  def test_execute_one_simpleperf_run_success(self,
-      mock_exists, mock_process, mock_run):
+  def test_execute_one_simpleperf_run_failure(self, mock_exists, mock_process,
+      mock_run):
+    self.setUpSubtest("simpleperf")
     with (mock.patch("src.command_executor.open_trace", autospec=True)
           as mock_open_trace):
       mock_open_trace.return_value = None
       self.mock_device.start_simpleperf_trace.return_value = mock_process
-      self.mock_device.create_directory.return_value = None
-      mock_exists.return_value = True
+      mock_exists.return_value = False
       mock_run.return_value = None
-      simpleperf_command = ProfilerCommand(
-          PROFILER_COMMAND_TYPE, "custom", "simpleperf", DEFAULT_OUT_DIR,
-          DEFAULT_DUR_MS, None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False,
-          None, None, None, None, "/", "/")
-      simpleperf_command.use_ui = True
+      self.command.use_ui = True
 
-      error = simpleperf_command.execute(self.mock_device)
+      with self.assertRaises(Exception) as e:
+        self.command.execute(self.mock_device)
 
-      self.assertEqual(error, None)
-      self.assertEqual(self.mock_device.pull_file.call_count, 1)
-      self.assertEqual(self.mock_device.create_directory.call_count, 1)
+      self.assertEqual(str(e.exception), "Gecko file was not created.")
 
+  @parameterized_profiler(setup_func=setUpSubtest)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
   @mock.patch.object(os.path, "exists", autospec=True)
-  def test_execute_one_simpleperf_run_failure(self,
-      mock_exists, mock_process, mock_run):
-    with mock.patch("src.command_executor.open_trace", autospec=True):
-      self.mock_device.start_simpleperf_trace.return_value = mock_process
-      mock_exists.return_value = False
-      mock_run.return_value = None
-      simpleperf_command = ProfilerCommand(
-          PROFILER_COMMAND_TYPE, "custom", "simpleperf", DEFAULT_OUT_DIR,
-          DEFAULT_DUR_MS, None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False,
-          None, None, None, None, "/", "/")
-      simpleperf_command.use_ui = True
-
-      with self.assertRaises(Exception) as e:
-        simpleperf_command.execute(self.mock_device)
-
-        self.assertEqual(str(e.exception), "Gecko file was not created.")
-
-  @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_one_run_no_ui_success(self, mock_process):
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+  def test_execute_one_profiler_run_no_ui_success(self, profiler, mock_exists,
+      mock_process, mock_run):
+    self.command.use_ui = False
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.side_effect = mock_process
+    else:
+      self.mock_device.start_simpleperf_trace.side_effect = mock_process
+    mock_exists.return_value = True
+    mock_run.return_value = None
 
     error = self.command.execute(self.mock_device)
 
     self.assertEqual(error, None)
     self.assertEqual(self.mock_device.pull_file.call_count, 1)
 
-  def test_execute_check_device_connection_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_check_device_connection_failure(self, profiler, mock_exists,
+      mock_run):
     self.mock_device.check_device_connection.side_effect = TEST_EXCEPTION
+    mock_exists.return_value = True
+    mock_run.return_value = None
 
     with self.assertRaises(Exception) as e:
       self.command.execute(self.mock_device)
@@ -147,7 +162,8 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(str(e.exception), TEST_ERROR_MSG)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_execute_root_device_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_root_device_failure(self, profiler):
     self.mock_device.root_device.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -156,7 +172,9 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(str(e.exception), TEST_ERROR_MSG)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_execute_create_default_config_bad_excluded_ftrace_event_error(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_create_default_config_bad_excluded_ftrace_event_error(self,
+      profiler):
     self.command.excluded_ftrace_events = ["mock-ftrace-event"]
 
     error = self.command.execute(self.mock_device)
@@ -198,7 +216,9 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
                                         " workqueue/*"))
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_execute_create_default_config_bad_included_ftrace_event_error(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_create_default_config_bad_included_ftrace_event_error(self,
+      profiler):
     self.command.included_ftrace_events = ["power/cpu_idle"]
 
     error = self.command.execute(self.mock_device)
@@ -241,7 +261,8 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
                                         " workqueue/*"))
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_execute_remove_file_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_remove_file_failure(self, profiler):
     self.mock_device.remove_file.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -250,8 +271,12 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(str(e.exception), TEST_ERROR_MSG)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_execute_start_perfetto_trace_failure(self):
-    self.mock_device.start_perfetto_trace.side_effect = TEST_EXCEPTION
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_start_profiler_trace_failure(self, profiler):
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.side_effect = TEST_EXCEPTION
+    else:
+      self.mock_device.start_simpleperf_trace.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
       self.command.execute(self.mock_device)
@@ -259,9 +284,13 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(str(e.exception), TEST_ERROR_MSG)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_process_poll_failure(self, mock_process):
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+  def test_execute_process_poll_failure(self, profiler, mock_process):
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.side_effect = TEST_EXCEPTION
+    else:
+      self.mock_device.start_simpleperf_trace.side_effect = TEST_EXCEPTION
     mock_process.poll.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -270,9 +299,13 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(str(e.exception), TEST_ERROR_MSG)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_pull_file_failure(self, mock_process):
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+  def test_execute_pull_file_failure(self, profiler, mock_process):
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.side_effect = mock_process
+    else:
+      self.mock_device.start_simpleperf_trace.side_effect = mock_process
     self.mock_device.pull_file.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -287,26 +320,40 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
   def simulate_user_switch(self, user):
     self.current_user = user
 
-  def setUp(self):
+  def setUpSubtest(self, profiler):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "user-switch", "perfetto", DEFAULT_OUT_DIR,
+        PROFILER_COMMAND_TYPE, "user-switch", profiler, DEFAULT_OUT_DIR,
         DEFAULT_DUR_MS, None, 1, None, DEFAULT_PERFETTO_CONFIG, None, False,
         None, None, None, None, None, None)
+    self.current_user = TEST_USER_ID_3
+    if profiler == "simpleperf":
+      self.command.symbols = "/"
+      self.command.scripts_path = "/"
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,
                                             serial=TEST_SERIAL)
     self.mock_device.check_device_connection.return_value = None
     self.mock_device.user_exists.return_value = None
-    self.current_user = TEST_USER_ID_3
+    self.mock_device.get_android_sdk_version.return_value = (
+        ANDROID_SDK_VERSION_T)
     self.mock_device.get_current_user.side_effect = lambda: self.current_user
-    self.mock_device.get_android_sdk_version.return_value = ANDROID_SDK_VERSION_T
+    self.mock_device.create_directory.return_value = None
 
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_all_users_different_success(self, mock_process):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_all_users_different_success(self, profiler, mock_exists,
+      mock_process, mock_run):
     self.command.from_user = TEST_USER_ID_1
     self.command.to_user = TEST_USER_ID_2
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.return_value = mock_process
+    else:
+      self.mock_device.start_simpleperf_trace.return_value = mock_process
     self.mock_device.perform_user_switch.side_effect = (
         lambda user: self.simulate_user_switch(user))
+    mock_exists.return_value = True
+    mock_run.return_value = None
 
     error = self.command.execute(self.mock_device)
 
@@ -315,11 +362,15 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.perform_user_switch.call_count, 3)
     self.assertEqual(self.mock_device.pull_file.call_count, 1)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_perform_user_switch_failure(self, mock_process):
+  def test_execute_perform_user_switch_failure(self, profiler, mock_process):
     self.command.from_user = TEST_USER_ID_2
     self.command.to_user = TEST_USER_ID_1
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.return_value = mock_process
+    else:
+      self.mock_device.start_simpleperf_trace.return_value = mock_process
     self.mock_device.perform_user_switch.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -329,7 +380,8 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.perform_user_switch.call_count, 1)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_execute_to_user_is_from_user_error(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_to_user_is_from_user_error(self, profiler):
     self.command.from_user = TEST_USER_ID_1
     self.command.to_user = TEST_USER_ID_1
 
@@ -346,13 +398,19 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.perform_user_switch.call_count, 0)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_from_user_empty_success(self, mock_process):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_from_user_empty_success(self, profiler, mock_exists,
+      mock_process, mock_run):
     self.command.from_user = None
     self.command.to_user = TEST_USER_ID_2
     self.mock_device.start_perfetto_trace.return_value = mock_process
     self.mock_device.perform_user_switch.side_effect = (
         lambda user: self.simulate_user_switch(user))
+    mock_exists.return_value = True
+    mock_run.return_value = None
 
     error = self.command.execute(self.mock_device)
 
@@ -361,7 +419,9 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.perform_user_switch.call_count, 2)
     self.assertEqual(self.mock_device.pull_file.call_count, 1)
 
-  def test_execute_to_user_is_current_user_and_from_user_empty_error(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_execute_to_user_is_current_user_and_from_user_empty_error(self,
+      profiler):
     self.command.from_user = None
     self.command.to_user = self.current_user
 
@@ -378,13 +438,22 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.perform_user_switch.call_count, 0)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_from_user_is_current_user_success(self, mock_process):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_from_user_is_current_user_success(self, profiler,
+      mock_exists, mock_process, mock_run):
     self.command.from_user = self.current_user
     self.command.to_user = TEST_USER_ID_2
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.return_value = mock_process
+    else:
+      self.mock_device.start_simpleperf_trace.return_value = mock_process
     self.mock_device.perform_user_switch.side_effect = (
         lambda user: self.simulate_user_switch(user))
+    mock_exists.return_value = True
+    mock_run.return_value = None
 
     error = self.command.execute(self.mock_device)
 
@@ -393,13 +462,22 @@ class UserSwitchCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.perform_user_switch.call_count, 2)
     self.assertEqual(self.mock_device.pull_file.call_count, 1)
 
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_execute_to_user_is_current_user_success(self, mock_process):
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_execute_to_user_is_current_user_success(self, profiler,
+      mock_exists, mock_process, mock_run):
     self.command.from_user = TEST_USER_ID_1
     self.command.to_user = self.current_user
-    self.mock_device.start_perfetto_trace.return_value = mock_process
+    if profiler == "perfetto":
+      self.mock_device.start_perfetto_trace.return_value = mock_process
+    else:
+      self.mock_device.start_simpleperf_trace.return_value = mock_process
     self.mock_device.perform_user_switch.side_effect = (
         lambda user: self.simulate_user_switch(user))
+    mock_exists.return_value = True
+    mock_run.return_value = None
 
     error = self.command.execute(self.mock_device)
 
@@ -420,7 +498,8 @@ class BootCommandExecutorUnitTest(unittest.TestCase):
                                             serial=TEST_SERIAL)
     self.mock_device.check_device_connection.return_value = None
     self.mock_device.is_package_running.return_value = False
-    self.mock_device.get_android_sdk_version.return_value = ANDROID_SDK_VERSION_T
+    self.mock_device.get_android_sdk_version.return_value = (
+        ANDROID_SDK_VERSION_T)
 
   def test_execute_reboot_success(self):
     error = self.command.execute(self.mock_device)
@@ -449,14 +528,16 @@ class BootCommandExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
   def test_execute_get_prop_and_old_android_version_failure(self):
-    self.mock_device.get_android_sdk_version.return_value = ANDROID_SDK_VERSION_S
+    self.mock_device.get_android_sdk_version.return_value = (
+        ANDROID_SDK_VERSION_S)
 
     error = self.command.execute(self.mock_device)
 
     self.assertNotEqual(error, None)
     self.assertEqual(error.message, (
-        "Cannot perform trace on boot because only devices with version Android 13 (T)"
-        " or newer can be configured to automatically start recording traces on boot."))
+        "Cannot perform trace on boot because only devices with version "
+        "Android 13 (T) or newer can be configured to automatically start "
+        "recording traces on boot."))
     self.assertEqual(error.suggestion, (
         "Update your device or use a different device with Android 13 (T) or"
         " newer."))
@@ -526,20 +607,30 @@ class BootCommandExecutorUnitTest(unittest.TestCase):
 
 class AppStartupExecutorUnitTest(unittest.TestCase):
 
-  def setUp(self):
+  def setUpSubtest(self, profiler):
     self.command = ProfilerCommand(
-        PROFILER_COMMAND_TYPE, "app-startup", "perfetto", DEFAULT_OUT_DIR,
+        PROFILER_COMMAND_TYPE, "app-startup", profiler, DEFAULT_OUT_DIR,
         DEFAULT_DUR_MS, TEST_PACKAGE_1, 1, None, DEFAULT_PERFETTO_CONFIG, None,
         False, None, None, None, None, None, None)
+    if profiler == "simpleperf":
+      self.command.symbols = "/"
+      self.command.scripts_path = "/"
     self.mock_device = mock.create_autospec(AdbDevice, instance=True,
                                             serial=TEST_SERIAL)
     self.mock_device.check_device_connection.return_value = None
     self.mock_device.get_packages.return_value = [TEST_PACKAGE_1,
                                                   TEST_PACKAGE_2]
     self.mock_device.is_package_running.return_value = False
-    self.mock_device.get_android_sdk_version.return_value = ANDROID_SDK_VERSION_T
+    self.mock_device.get_android_sdk_version.return_value = (
+        ANDROID_SDK_VERSION_T)
+    self.mock_device.create_directory.return_value = None
 
-  def test_app_startup_command_success(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  @mock.patch.object(subprocess, "run", autospec=True)
+  @mock.patch.object(os.path, "exists", autospec=True)
+  def test_app_startup_command_success(self, profiler, mock_exists, mock_run):
+    mock_exists.return_value = True
+    mock_run.return_value = None
     self.mock_device.start_package.return_value = None
 
     error = self.command.execute(self.mock_device)
@@ -549,7 +640,8 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.force_stop_package.call_count, 1)
     self.assertEqual(self.mock_device.pull_file.call_count, 1)
 
-  def test_start_package_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_start_package_failure(self, profiler):
     self.mock_device.start_package.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -560,7 +652,8 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.force_stop_package.call_count, 0)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_get_packages_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_get_packages_failure(self, profiler):
     self.mock_device.get_packages.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
@@ -570,7 +663,8 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.start_package.call_count, 0)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_package_does_not_exist_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_package_does_not_exist_failure(self, profiler):
     self.mock_device.get_packages.return_value = [TEST_PACKAGE_2,
                                                   TEST_PACKAGE_3]
 
@@ -587,7 +681,8 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.start_package.call_count, 0)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_package_is_running_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_package_is_running_failure(self, profiler):
     self.mock_device.is_package_running.return_value = True
 
     error = self.command.execute(self.mock_device)
@@ -603,7 +698,8 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.start_package.call_count, 0)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_force_stop_package_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_force_stop_package_failure(self, profiler):
     self.mock_device.start_package.return_value = None
     self.mock_device.force_stop_package.side_effect = TEST_EXCEPTION
 
@@ -614,7 +710,8 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(self.mock_device.start_package.call_count, 1)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_kill_process_success(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_kill_process_success(self, profiler):
     self.mock_device.start_package.return_value = TEST_VALIDATION_ERROR
 
     error = self.command.execute(self.mock_device)
@@ -623,19 +720,29 @@ class AppStartupExecutorUnitTest(unittest.TestCase):
     self.assertEqual(error.message, TEST_ERROR_MSG)
     self.assertEqual(error.suggestion, None)
     self.assertEqual(self.mock_device.start_package.call_count, 1)
-    self.assertEqual(self.mock_device.kill_process.call_count, 1)
+    if profiler == "perfetto":
+      self.assertEqual(self.mock_device.kill_process.call_count, 1)
+    else:
+      self.assertEqual(self.mock_device.send_signal.call_count, 1)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
-  def test_kill_process_failure(self):
+  @parameterized_profiler(setup_func=setUpSubtest)
+  def test_kill_process_failure(self, profiler):
     self.mock_device.start_package.return_value = TEST_VALIDATION_ERROR
-    self.mock_device.kill_process.side_effect = TEST_EXCEPTION
+    if profiler == "perfetto":
+      self.mock_device.kill_process.side_effect = TEST_EXCEPTION
+    else:
+      self.mock_device.send_signal.side_effect = TEST_EXCEPTION
 
     with self.assertRaises(Exception) as e:
       self.command.execute(self.mock_device)
 
     self.assertEqual(str(e.exception), TEST_ERROR_MSG)
     self.assertEqual(self.mock_device.start_package.call_count, 1)
-    self.assertEqual(self.mock_device.kill_process.call_count, 1)
+    if profiler == "perfetto":
+      self.assertEqual(self.mock_device.kill_process.call_count, 1)
+    else:
+      self.assertEqual(self.mock_device.send_signal.call_count, 1)
     self.assertEqual(self.mock_device.pull_file.call_count, 0)
 
 
