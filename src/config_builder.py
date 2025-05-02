@@ -51,6 +51,40 @@ def create_ftrace_events_string(predefined_ftrace_events,
   return ftrace_events_string, None
 
 
+def create_trigger_config(trigger_names, trigger_mode, trigger_timeout_ms,
+                          trigger_stop_delay_ms):
+  config_trigger_mode = trigger_mode
+  use_clone_snapshot_if_available = "false"
+
+  if config_trigger_mode == "CLONE_SNAPSHOT":
+    # The use_clone_snapshot_if_available flag will default to STOP_TRACING
+    # on Android versions without CLONE_SNAPSHOT, and will default to
+    # CLONE_SNAPSHOT on Android versions that do have it. When using this
+    # flag, the tracing mode must be STOP_TRACING.
+    config_trigger_mode = "STOP_TRACING"
+    use_clone_snapshot_if_available = "true"
+
+  trigger_config = f'''
+  trigger_config: {{
+      trigger_mode: {config_trigger_mode}
+
+      trigger_timeout_ms: {trigger_timeout_ms}
+
+      use_clone_snapshot_if_available: {use_clone_snapshot_if_available}'''
+
+  for i, name in enumerate(trigger_names):
+    trigger_config += f'''
+      triggers {{
+          name: "{name}"
+
+          stop_delay_ms: {trigger_stop_delay_ms[i % len(trigger_stop_delay_ms)]}
+      }}'''
+
+  trigger_config += f'''
+    }}'''
+  return trigger_config
+
+
 def build_predefined_config(command,
                             android_sdk_version,
                             predefined_ftrace_events=None,
@@ -170,6 +204,16 @@ def build_predefined_config(command,
   if android_sdk_version < ANDROID_SDK_VERSION_T:
     cpufreq_period_string = ""
 
+  trigger_config = ""
+  # TODO(b/415117982): Remove call to hasattr when trigger support is added to config subcommand
+  if hasattr(command, "trigger_names") and command.trigger_names:
+    trigger_config = create_trigger_config(command.trigger_names,
+                                           command.trigger_mode,
+                                           command.trigger_timeout_ms,
+                                           command.trigger_stop_delay_ms)
+
+  write_into_file = "true" if trigger_config == "" else "false"
+
   duration_string = ""
   if command.dur_ms is not None:
     duration_string = f'''
@@ -270,7 +314,7 @@ def build_predefined_config(command,
 
   if miscellaneous_options is None:
     miscellaneous_options = f'''
-    write_into_file: true
+    write_into_file: {write_into_file}
     file_write_period_ms: 5000
     max_file_size_bytes: 100000000000
     flush_period_ms: 5000'''
@@ -295,6 +339,7 @@ def build_predefined_config(command,
     {duration_string.lstrip()}
     {miscellaneous_options.lstrip()}
     {incremental_state.lstrip()}
+    {trigger_config.lstrip()}
 
     EOF'''
   return textwrap.dedent(config), None

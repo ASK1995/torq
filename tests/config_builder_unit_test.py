@@ -200,6 +200,7 @@ flush_period_ms: 5000
 incremental_state_config {{
   clear_period_ms: 5000
 }}
+
 '''
 
 DEFAULT_CONFIG_9000_DUR_MS = f'''\
@@ -540,9 +541,11 @@ EOF'''
 class ConfigBuilderUnitTest(unittest.TestCase):
 
   def setUp(self):
+    self.maxDiff = None
     self.command = ProfilerCommand(None, "custom", None, None, DEFAULT_DUR_MS,
                                    None, None, "test-path", None, None, None,
-                                   None, None, None, None, None, None)
+                                   None, None, None, None, None, None, None,
+                                   None, None, None)
 
   def test_build_default_config_setting_valid_dur_ms(self):
     self.command.dur_ms = TEST_DUR_MS

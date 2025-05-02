@@ -140,3 +140,15 @@ python_test_host {
         unit_test: true,
     },
 }
+
+python_test_host {
+    name: "trigger_unit_test",
+    main: "tests/trigger_unit_test.py",
+    srcs: ["tests/trigger_unit_test.py"],
+    defaults: ["torq_defaults"],
+    libs: ["torq_test_lib"],
+    embedded_launcher: false,
+    test_options: {
+        unit_test: true,
+    },
+}

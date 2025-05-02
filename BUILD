@@ -110,3 +110,12 @@ py_test(
         ":torq_test_lib",
     ],
 )
+
+py_test(
+    name = "trigger_unit_test",
+    srcs = ["tests/trigger_unit_test.py"],
+    deps = [
+        ":torq_lib",
+        ":torq_test_lib",
+    ],
+)

@@ -380,7 +380,8 @@ class DeviceUnitTest(unittest.TestCase):
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
     command = ProfilerCommand("profiler", "custom", None, None, 10000, None,
                               None, ["cpu-cycles"], None, None, None, None,
-                              None, None, None, None, None)
+                              None, None, None, None, None, None, None, None,
+                              None)
     mock_process = adbDevice.start_simpleperf_trace(command)
 
     # No exception is expected to be thrown
@@ -390,10 +391,11 @@ class DeviceUnitTest(unittest.TestCase):
   def test_start_simpleperf_trace_failure(self, mock_subprocess_popen):
     mock_subprocess_popen.side_effect = TEST_EXCEPTION
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
-
     command = ProfilerCommand("profiler", "custom", None, None, 10000, None,
                               None, ["cpu-cycles"], None, None, None, None,
-                              None, None, None, None, None)
+                              None, None, None, None, None, None, None, None,
+                              None)
+
     with self.assertRaises(Exception) as e:
       adbDevice.start_simpleperf_trace(command)
 
@@ -405,7 +407,7 @@ class DeviceUnitTest(unittest.TestCase):
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
 
     # No exception is expected to be thrown
-    adbDevice.pull_file(TEST_FILE_PATH, TEST_FILE_PATH)
+    self.assertTrue(adbDevice.pull_file(TEST_FILE_PATH, TEST_FILE_PATH))
 
   @mock.patch.object(subprocess, "run", autospec=True)
   def test_pull_file_failure(self, mock_subprocess_run):
@@ -601,7 +603,7 @@ class DeviceUnitTest(unittest.TestCase):
 
     is_completed = adbDevice.is_boot_completed()
 
-    self.assertEqual(is_completed, False)
+    self.assertFalse(is_completed)
 
   @mock.patch.object(subprocess, "run", autospec=True)
   def test_is_boot_completed_failure(self, mock_subprocess_run):
@@ -707,7 +709,7 @@ class DeviceUnitTest(unittest.TestCase):
 
     is_running = adbDevice.is_package_running(TEST_PACKAGE_1)
 
-    self.assertEqual(is_running, False)
+    self.assertFalse(is_running)
 
   @mock.patch.object(subprocess, "run", autospec=True)
   def test_package_running_and_get_pid_failure(self, mock_subprocess_run):
@@ -910,7 +912,7 @@ class DeviceUnitTest(unittest.TestCase):
     mock_subprocess_run.return_value = generate_mock_completed_process()
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
 
-    self.assertEqual(adbDevice.file_exists("perfetto"), True)
+    self.assertTrue(adbDevice.file_exists("perfetto"))
 
   @mock.patch.object(subprocess, "run", autospec=True)
   def test_file_exists_failure(self, mock_subprocess_run):
@@ -919,7 +921,7 @@ class DeviceUnitTest(unittest.TestCase):
             returncode=ShellExitCodes.EX_FAILURE.value))
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
 
-    self.assertEqual(adbDevice.file_exists("perfetto"), False)
+    self.assertFalse(adbDevice.file_exists("perfetto"))
 
 
 if __name__ == '__main__':

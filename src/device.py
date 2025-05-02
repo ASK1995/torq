@@ -119,17 +119,16 @@ class AdbDevice:
                        " being rooted." % self.serial))
 
   def remove_file(self, file_path):
-    output = run_subprocess(
-        ["adb", "-s", self.serial, "shell", "rm", "-f", file_path],
-        capture_output=True,
-        ignore_returncodes=[ShellExitCodes.EX_NOTFOUND])
-    return output.returncode == 0
+    output = run_subprocess(["adb", "-s", self.serial, "shell", "rm", file_path],
+                            capture_output=True,
+                            ignore_returncodes=[ShellExitCodes.EX_FAILURE])
+    return not output.returncode
 
   def file_exists(self, file):
     output = run_subprocess(["adb", "-s", self.serial, "shell", "ls", file],
                             capture_output=True,
                             ignore_returncodes=[ShellExitCodes.EX_FAILURE])
-    return output.returncode == 0
+    return not output.returncode
 
   def start_perfetto_trace(self, config):
     return subprocess.Popen(("adb -s %s shell perfetto -c - --txt -o"
@@ -155,7 +154,11 @@ class AdbDevice:
         shell=True)
 
   def pull_file(self, file_path, host_file):
-    run_subprocess(["adb", "-s", self.serial, "pull", file_path, host_file])
+    output = run_subprocess(
+        ["adb", "-s", self.serial, "pull", file_path, host_file],
+        capture_output=True,
+        ignore_returncodes=[ShellExitCodes.EX_FAILURE])
+    return not output.returncode
 
   def get_all_users(self):
     command_output = run_subprocess(

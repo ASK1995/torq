@@ -188,6 +188,7 @@ flush_period_ms: 5000
 incremental_state_config {{
   clear_period_ms: 5000
 }}
+
 '''
 
 TEST_DEFAULT_CONFIG_OLD_ANDROID = f'''\
@@ -348,6 +349,7 @@ flush_period_ms: 5000
 incremental_state_config {{
   clear_period_ms: 5000
 }}
+
 '''
 
 
