@@ -110,7 +110,7 @@ def create_parser():
                                   choices=['lightweight', 'default', 'memory'],
                                   help=('Name of the predefined perfetto'
                                         ' config to print.'))
-  config_show_parser.add_argument('-d', '--dur-ms', type=int, default=DEFAULT_DUR_MS,
+  config_show_parser.add_argument('-d', '--dur-ms', type=int,
                       help=('The duration (ms) of the event. Determines when'
                             ' to stop collecting performance data.'))
   config_show_parser.add_argument('--excluded-ftrace-events', action='append',
@@ -131,7 +131,7 @@ def create_parser():
   config_pull_parser.add_argument('file_path', nargs='?',
                                   help=('File path to copy the predefined'
                                         ' config to'))
-  config_pull_parser.add_argument('-d', '--dur-ms', type=int, default=DEFAULT_DUR_MS,
+  config_pull_parser.add_argument('-d', '--dur-ms', type=int,
                       help=('The duration (ms) of the event. Determines when'
                             ' to stop collecting performance data.'))
   config_pull_parser.add_argument('--excluded-ftrace-events', action='append',
