@@ -23,6 +23,7 @@ from .open_ui import open_trace
 
 ANDROID_SDK_VERSION_T = 33
 PERFETTO_DEVICE_TRACE_FOLDER = "/data/misc/perfetto-traces"
+SIMPLEPERF_DEVICE_TRACE_FOLDER = "/tmp/simpleperf-traces"
 
 class Command(ABC):
   """
@@ -83,13 +84,18 @@ class ProfilerCommand(Command):
 
   def validate(self, device):
     print("Further validating arguments of ProfilerCommand.")
-    error = self.validate_trace_folder(device)
-    if error is not None:
-      return error
-    if self.simpleperf_event is not None:
-      error = device.simpleperf_event_exists(self.simpleperf_event)
+    if self.profiler == "perfetto":
+      error = self.validate_trace_folder(device)
       if error is not None:
         return error
+    elif self.profiler == "simpleperf":
+      error = device.create_directory(SIMPLEPERF_DEVICE_TRACE_FOLDER)
+      if error is not None:
+        return error
+      if self.simpleperf_event is not None:
+        error = device.simpleperf_event_exists(self.simpleperf_event)
+        if error is not None:
+          return error
     match self.event:
       case "user-switch":
         return self.validate_user_switch(device)

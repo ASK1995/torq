@@ -94,6 +94,7 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
           as mock_open_trace):
       mock_open_trace.return_value = None
       self.mock_device.start_simpleperf_trace.return_value = mock_process
+      self.mock_device.create_directory.return_value = None
       mock_exists.return_value = True
       mock_run.return_value = None
       simpleperf_command = ProfilerCommand(
@@ -106,6 +107,7 @@ class ProfilerCommandExecutorUnitTest(unittest.TestCase):
 
       self.assertEqual(error, None)
       self.assertEqual(self.mock_device.pull_file.call_count, 1)
+      self.assertEqual(self.mock_device.create_directory.call_count, 1)
 
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)

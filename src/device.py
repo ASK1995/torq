@@ -25,7 +25,7 @@ from .validation_error import ValidationError
 ADB_ROOT_TIMED_OUT_LIMIT_SECS = 5
 ADB_BOOT_COMPLETED_TIMED_OUT_LIMIT_SECS = 30
 POLLING_INTERVAL_SECS = 0.5
-SIMPLEPERF_TRACE_FILE = "/data/misc/perfetto-traces/perf.data"
+SIMPLEPERF_TRACE_FILE = "/tmp/simpleperf-traces/perf.data"
 
 class AdbDevice:
   """
@@ -250,6 +250,14 @@ class AdbDevice:
 
   def get_android_sdk_version(self):
     return int(self.get_prop("ro.build.version.sdk"))
+
+  def create_directory(self, directory):
+    process = subprocess.run(["adb", "-s", self.serial, "shell", "mkdir", "-p",
+                              directory], capture_output=True)
+    if len(process.stderr.decode("utf-8")) != 0:
+      return ValidationError("Unable to create directory on device.",
+                             "Check device configuration.")
+    return None
 
   def simpleperf_event_exists(self, simpleperf_events):
     events_copy = simpleperf_events.copy()
