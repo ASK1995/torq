@@ -275,12 +275,15 @@ class DeviceUnitTest(unittest.TestCase):
     self.assertEqual(error, None)
     self.assertEqual(adbDevice.serial, TEST_DEVICE_SERIAL2)
 
+  @mock.patch.object(AdbDevice, "poll_is_task_completed", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
-  def test_root_device_success(self, mock_subprocess_run):
+  def test_root_device_success(self, mock_subprocess_run,
+      mock_poll_is_task_completed):
     mock_subprocess_run.side_effect = [
         self.generate_mock_completed_process(),
         self.generate_adb_devices_result([TEST_DEVICE_SERIAL])]
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+    mock_poll_is_task_completed.return_value = True
 
     # No exception is expected to be thrown
     adbDevice.root_device()
@@ -295,12 +298,13 @@ class DeviceUnitTest(unittest.TestCase):
 
     self.assertEqual(str(e.exception), TEST_FAILURE_MSG)
 
+  @mock.patch.object(AdbDevice, "poll_is_task_completed", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
-  def test_root_device_times_out_error(self, mock_subprocess_run):
-    mock_subprocess_run.side_effect = lambda args, capture_output=True: (
-        next(self.subprocess_output(self.generate_adb_devices_result([]),
-                                    self.generate_mock_completed_process())))
+  def test_root_device_times_out_error(self, mock_subprocess_run,
+      mock_poll_is_task_completed):
+    mock_subprocess_run.return_value = self.generate_mock_completed_process()
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+    mock_poll_is_task_completed.return_value = False
 
     with self.assertRaises(Exception) as e:
       adbDevice.root_device()
@@ -535,10 +539,13 @@ class DeviceUnitTest(unittest.TestCase):
 
     self.assertEqual(str(e.exception), TEST_FAILURE_MSG)
 
+  @mock.patch.object(AdbDevice, "poll_is_task_completed", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
-  def test_reboot_success(self, mock_subprocess_run):
+  def test_reboot_success(self, mock_subprocess_run,
+      mock_poll_is_task_completed):
     mock_subprocess_run.return_value = self.generate_mock_completed_process()
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+    mock_poll_is_task_completed.return_value = True
 
     # No exception is expected to be thrown
     adbDevice.reboot()
@@ -600,11 +607,14 @@ class DeviceUnitTest(unittest.TestCase):
 
     self.assertEqual(str(e.exception), TEST_FAILURE_MSG)
 
+  @mock.patch.object(AdbDevice, "poll_is_task_completed", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
-  def test_wait_for_boot_to_complete_success(self, mock_subprocess_run):
+  def test_wait_for_boot_to_complete_success(self, mock_subprocess_run,
+      mock_poll_is_task_completed):
     mock_subprocess_run.return_value = (
         self.generate_mock_completed_process(BOOT_COMPLETE_OUTPUT))
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+    mock_poll_is_task_completed.return_value = True
 
     # No exception is expected to be thrown
     adbDevice.wait_for_boot_to_complete()
@@ -620,10 +630,13 @@ class DeviceUnitTest(unittest.TestCase):
 
     self.assertEqual(str(e.exception), TEST_FAILURE_MSG)
 
+  @mock.patch.object(AdbDevice, "poll_is_task_completed", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
-  def test_wait_for_boot_to_complete_times_out_error(self, mock_subprocess_run):
+  def test_wait_for_boot_to_complete_times_out_error(self, mock_subprocess_run,
+      mock_poll_is_task_completed):
     mock_subprocess_run.return_value = self.generate_mock_completed_process()
     adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+    mock_poll_is_task_completed.return_value = False
 
     with self.assertRaises(Exception) as e:
       adbDevice.wait_for_boot_to_complete()
