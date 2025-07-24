@@ -131,6 +131,11 @@ class AdbDevice:
                              "trace.perfetto-trace %s" % (self.serial, config)),
                             shell=True)
 
+  def trigger_perfetto(self, trigger_name):
+    subprocess.run(
+        ("adb -s %s shell trigger_perfetto %s" % (self.serial, trigger_name)),
+        shell=True)
+
   def start_simpleperf_trace(self, command):
     events_param = "-e " + ",".join(command.simpleperf_event)
     duration = ""

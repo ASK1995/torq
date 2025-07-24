@@ -126,6 +126,21 @@ These are the arguments for the `torq vm` CLI subcommand.
 | `relay-producer enable [--address <relay_producer_socket>]` | Enables traced's relay producer support. The `--address` specifies the relay producer socket to use. |    | --address: `vsock://-1:30001`  |
 | `relay-producer disable` | Disables traced's relay producer support. |    |    |
 
+## Activate Perfetto triggers
+
+When you want to get traces in response to specific code paths, Perfetto's
+trigger configs can collect traces when specific triggers are received via the
+trigger_perfetto binary. Torq provides a subcommand to trigger trace collection
+for a trigger included in a Perfetto config.
+
+### CLI Arguments
+
+These are the arguments `torq trigger` subcommand.
+
+| Argument         | Description                                                                    | Currently Supported Arguments | Default       |
+|------------------|--------------------------------------------------------------------------------|-|---------------|
+| `trigger <name>` | Subcommand that sends a trigger to Perfetto using the trigger_perfetto binary. | | |
+
 ## Testing Torq
 
 To run **torq**'s test, do:
