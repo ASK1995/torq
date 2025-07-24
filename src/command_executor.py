@@ -21,7 +21,7 @@ import time
 from abc import ABC, abstractmethod
 from .config_builder import PREDEFINED_PERFETTO_CONFIGS, build_custom_config
 from .handle_input import HandleInput
-from .open_ui import open_trace
+from .open_ui_utils import open_trace
 from .device import SIMPLEPERF_TRACE_FILE, POLLING_INTERVAL_SECS
 from .utils import convert_simpleperf_to_gecko
 

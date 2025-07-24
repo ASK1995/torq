@@ -16,10 +16,8 @@
 
 from abc import ABC, abstractmethod
 from .command_executor import ProfilerCommandExecutor, \
-  UserSwitchCommandExecutor, BootCommandExecutor, AppStartupCommandExecutor, \
-  WEB_UI_ADDRESS
+  UserSwitchCommandExecutor, BootCommandExecutor, AppStartupCommandExecutor
 from .validation_error import ValidationError
-from .open_ui import open_trace
 
 ANDROID_SDK_VERSION_T = 33
 PERFETTO_DEVICE_TRACE_FOLDER = "/data/misc/perfetto-traces"
@@ -157,19 +155,3 @@ class ProfilerCommand(Command):
                              "Make sure that your device has %s properly"
                              " configured." % self.profiler.capitalize())
     return None
-
-
-class OpenCommand(Command):
-  """
-  Represents commands which open traces.
-  """
-  def __init__(self, file_path, use_trace_processor):
-    super().__init__(type)
-    self.file_path = file_path
-    self.use_trace_processor = use_trace_processor
-
-  def validate(self, device):
-    raise NotImplementedError
-
-  def execute(self, device):
-    return open_trace(self.file_path, WEB_UI_ADDRESS, self.use_trace_processor)

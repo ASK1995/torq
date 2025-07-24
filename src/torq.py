@@ -17,17 +17,22 @@
 import argparse
 import os
 
-from .command import ProfilerCommand, OpenCommand
+from .command import ProfilerCommand
 from .config import (
    add_config_parser,
    verify_config_args,
    create_config_command,
    PREDEFINED_PERFETTO_CONFIGS
 )
+from .open import (
+   add_open_parser,
+   OpenCommand,
+   verify_open_args
+)
 from .device import AdbDevice
-from .validation_error import ValidationError
-from .utils import path_exists, set_default_subparser
+from .utils import set_default_subparser
 from .validate_simpleperf import verify_simpleperf_args
+from .validation_error import ValidationError
 from .vm import add_vm_parser, create_vm_command
 
 # Add default parser capability to argparse
@@ -100,15 +105,7 @@ def create_parser():
   add_config_parser(subparsers)
 
   # Open options
-  open_parser = subparsers.add_parser('open',
-                                      help=('The open subcommand is used '
-                                            'to open trace files in the '
-                                            'perfetto ui.'))
-  open_parser.add_argument('file_path', help='Path to trace file.')
-  open_parser.add_argument('--use_trace_processor', default=False,
-                           action='store_true',
-                                  help=('Enables using trace_processor to open '
-                                        'the trace regardless of its size.'))
+  add_open_parser(subparsers)
 
   # Configure perfetto in virtualized Android
   add_vm_parser(subparsers)
@@ -291,15 +288,6 @@ def verify_profiler_args(args):
       return None, error
   else:
     args.scripts_path = None
-
-  return args, None
-
-
-def verify_open_args(args):
-  if not path_exists(args.file_path):
-    return None, ValidationError(
-        "Command is invalid because %s is an invalid file path."
-        % args.file_path, "Make sure your file exists.")
 
   return args, None
 
