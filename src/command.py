@@ -17,7 +17,7 @@
 from abc import ABC, abstractmethod
 from .command_executor import ProfilerCommandExecutor, \
   UserSwitchCommandExecutor, BootCommandExecutor, AppStartupCommandExecutor, \
-  ConfigCommandExecutor, WEB_UI_ADDRESS
+  WEB_UI_ADDRESS
 from .validation_error import ValidationError
 from .open_ui import open_trace
 
@@ -157,24 +157,6 @@ class ProfilerCommand(Command):
                              "Make sure that your device has %s properly"
                              " configured." % self.profiler.capitalize())
     return None
-
-
-class ConfigCommand(Command):
-  """
-  Represents commands which get information about the predefined configs.
-  """
-  def __init__(self, type, config_name, file_path, dur_ms,
-      excluded_ftrace_events, included_ftrace_events):
-    super().__init__(type)
-    self.config_name = config_name
-    self.file_path = file_path
-    self.dur_ms = dur_ms
-    self.excluded_ftrace_events = excluded_ftrace_events
-    self.included_ftrace_events = included_ftrace_events
-    self.command_executor = ConfigCommandExecutor()
-
-  def validate(self, device):
-    raise NotImplementedError
 
 
 class OpenCommand(Command):

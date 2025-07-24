@@ -279,38 +279,3 @@ class AppStartupCommandExecutor(ProfilerCommandExecutor):
   def trigger_system_event(self, command, device):
     return device.start_package(command.app)
 
-
-class ConfigCommandExecutor(CommandExecutor):
-
-  def execute(self, command, device):
-    return self.execute_command(command, device)
-
-  def execute_command(self, command, device):
-    match command.get_type():
-      case "config list":
-        print("\n".join(list(PREDEFINED_PERFETTO_CONFIGS.keys())))
-        return None
-      case "config show" | "config pull":
-        return self.execute_config_command(command, device)
-      case _:
-        raise ValueError("Invalid config subcommand was used.")
-
-  def execute_config_command(self, command, device):
-    android_sdk_version = ANDROID_SDK_VERSION_T
-    error = device.check_device_connection()
-    if error is None:
-      device.root_device()
-      android_sdk_version = device.get_android_sdk_version()
-
-    config, error = PREDEFINED_PERFETTO_CONFIGS[command.config_name](
-        command, android_sdk_version)
-
-    if error is not None:
-      return error
-
-    if command.get_type() == "config pull":
-      subprocess.run(("cat > %s %s" % (command.file_path, config)), shell=True)
-    else:
-      print("\n".join(config.strip().split("\n")[2:-2]))
-
-    return None

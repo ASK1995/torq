@@ -19,7 +19,7 @@ import subprocess
 import sys
 import io
 from unittest import mock
-from src.command import ConfigCommand
+from src.config import ConfigCommand
 from src.device import AdbDevice
 from src.validation_error import ValidationError
 from src.torq import DEFAULT_DUR_MS, PREDEFINED_PERFETTO_CONFIGS

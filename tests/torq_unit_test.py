@@ -18,7 +18,7 @@ import unittest
 import sys
 import os
 from unittest import mock
-from src.torq import create_parser, verify_args, get_command_type, \
+from src.torq import create_parser, verify_args, get_command, \
   DEFAULT_DUR_MS, DEFAULT_OUT_DIR
 
 TEST_USER_ID = 10
@@ -761,12 +761,12 @@ class TorqUnitTest(unittest.TestCase):
     with self.assertRaises(SystemExit):
       parser.parse_args()
 
-  def test_get_command_type_profiler(self):
+  def test_get_command_profiler(self):
     parser = self.set_up_parser("torq.py -d 20000")
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command_type(args)
+    command = get_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "profiler")
@@ -898,32 +898,32 @@ class TorqUnitTest(unittest.TestCase):
         " torq pull lightweight to copy to ./lightweight.pbtxt\n\t "
         "torq pull memory to copy to ./memory.pbtxt"))
 
-  def test_get_command_type_config_list(self):
+  def test_get_command_config_list(self):
     parser = self.set_up_parser("torq.py config list")
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command_type(args)
+    command = get_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "config list")
 
-  def test_get_command_type_config_show(self):
+  def test_get_command_config_show(self):
     parser = self.set_up_parser("torq.py config show default")
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command_type(args)
+    command = get_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "config show")
 
-  def test_get_command_type_config_pull(self):
+  def test_get_command_config_pull(self):
     parser = self.set_up_parser("torq.py config pull default")
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command_type(args)
+    command = get_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "config pull")

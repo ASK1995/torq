@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
   if not use_android:
     # Default to using the Bazel build system
-    cmd = ['bazel', 'test']
+    cmd = ['bazel', 'test', '--test_output=errors']
 
     # Apply filters or run all tests
     if len(filter_tests) > 0:

@@ -16,10 +16,16 @@
 
 import argparse
 import os
-from .command import ProfilerCommand, ConfigCommand, OpenCommand
+
+from .command import ProfilerCommand, OpenCommand
+from .config import (
+   add_config_parser,
+   verify_config_args,
+   create_config_command,
+   PREDEFINED_PERFETTO_CONFIGS
+)
 from .device import AdbDevice
 from .validation_error import ValidationError
-from .config_builder import PREDEFINED_PERFETTO_CONFIGS
 from .utils import path_exists, set_default_subparser
 from .validate_simpleperf import verify_simpleperf_args
 from .vm import add_vm_parser, create_vm_command
@@ -91,55 +97,7 @@ def create_parser():
                       help='Specifies path to symbols library.')
 
   # Config options
-  config_parser = subparsers.add_parser('config',
-                                        help=('The config subcommand used'
-                                              ' to list and show the'
-                                              ' predefined perfetto configs.'))
-  config_subparsers = config_parser.add_subparsers(dest='config_subcommand',
-                                                   help=('torq config'
-                                                         ' subcommands'))
-  config_subparsers.add_parser('list',
-                               help=('Command to list the predefined'
-                                     ' perfetto configs'))
-  config_show_parser = config_subparsers.add_parser('show',
-                                                    help=('Command to print'
-                                                          ' the '
-                                                          ' perfetto config'
-                                                          ' in the terminal.'))
-  config_show_parser.add_argument('config_name',
-                                  choices=['lightweight', 'default', 'memory'],
-                                  help=('Name of the predefined perfetto'
-                                        ' config to print.'))
-  config_show_parser.add_argument('-d', '--dur-ms', type=int,
-                      help=('The duration (ms) of the event. Determines when'
-                            ' to stop collecting performance data.'))
-  config_show_parser.add_argument('--excluded-ftrace-events', action='append',
-                      help=('Excludes specified ftrace event from the perfetto'
-                            ' config events.'))
-  config_show_parser.add_argument('--included-ftrace-events', action='append',
-                      help=('Includes specified ftrace event in the perfetto'
-                            ' config events.'))
-
-  config_pull_parser = config_subparsers.add_parser('pull',
-                                                    help=('Command to copy'
-                                                          ' a predefined config'
-                                                          ' to the specified'
-                                                          ' file path.'))
-  config_pull_parser.add_argument('config_name',
-                                  choices=['lightweight', 'default', 'memory'],
-                                  help='Name of the predefined config to copy')
-  config_pull_parser.add_argument('file_path', nargs='?',
-                                  help=('File path to copy the predefined'
-                                        ' config to'))
-  config_pull_parser.add_argument('-d', '--dur-ms', type=int,
-                      help=('The duration (ms) of the event. Determines when'
-                            ' to stop collecting performance data.'))
-  config_pull_parser.add_argument('--excluded-ftrace-events', action='append',
-                      help=('Excludes specified ftrace event from the perfetto'
-                            ' config events.'))
-  config_pull_parser.add_argument('--included-ftrace-events', action='append',
-                      help=('Includes specified ftrace event in the perfetto'
-                            ' config events.'))
+  add_config_parser(subparsers)
 
   # Open options
   open_parser = subparsers.add_parser('open',
@@ -336,29 +294,6 @@ def verify_profiler_args(args):
 
   return args, None
 
-def verify_config_args(args):
-  if args.config_subcommand is None:
-    return None, ValidationError(
-        ("Command is invalid because torq config cannot be called"
-         " without a subcommand."),
-        ("Use one of the following subcommands:\n"
-         "\t torq config list\n"
-         "\t torq config show\n"
-         "\t torq config pull\n"))
-
-  if args.config_subcommand == "pull":
-    if args.file_path is None:
-      args.file_path = "./" + args.config_name + ".pbtxt"
-    elif not os.path.isfile(args.file_path):
-      return None, ValidationError(
-          ("Command is invalid because %s is not a valid filepath."
-           % args.file_path),
-          ("A default filepath can be used if you do not specify a file-path:\n"
-           "\t torq pull default to copy to ./default.pbtxt\n"
-           "\t torq pull lightweight to copy to ./lightweight.pbtxt\n"
-           "\t torq pull memory to copy to ./memory.pbtxt"))
-
-  return args, None
 
 def verify_open_args(args):
   if not path_exists(args.file_path):
@@ -390,28 +325,7 @@ def create_profiler_command(args):
                          args.included_ftrace_events, args.from_user,
                          args.to_user, args.scripts_path, args.symbols)
 
-
-def create_config_command(args):
-  type = "config " + args.config_subcommand
-  config_name = None
-  file_path = None
-  dur_ms = None
-  excluded_ftrace_events = None
-  included_ftrace_events = None
-  if args.config_subcommand == "pull" or args.config_subcommand == "show":
-    config_name = args.config_name
-    dur_ms = args.dur_ms
-    excluded_ftrace_events = args.excluded_ftrace_events
-    included_ftrace_events = args.included_ftrace_events
-    if args.config_subcommand == "pull":
-      file_path = args.file_path
-
-  command = ConfigCommand(type, config_name, file_path, dur_ms,
-      excluded_ftrace_events, included_ftrace_events)
-  return command
-
-
-def get_command_type(args):
+def get_command(args):
   match args.subcommands:
     case "profiler":
       return create_profiler_command(args)
@@ -438,7 +352,7 @@ def run():
   if error is not None:
     print_error(error)
     return
-  command = get_command_type(args)
+  command = get_command(args)
   serial = args.serial[0] if args.serial else None
   device = AdbDevice(serial)
   error = command.execute(device)
