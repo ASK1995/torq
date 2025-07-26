@@ -138,3 +138,15 @@ you can do:
 ```bash
 ./tools/torq_test --android
 ```
+
+## Contributing to Torq
+
+Before starting development in **torq**'s codebase, run:
+```bash
+./tools/build_deps
+```
+
+Also, before submitting code remember to format the code. Run:
+```bash
+./tools/format_sources
+```
