@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-
 import builtins
 import io
 from io import BytesIO
@@ -40,14 +39,16 @@ WEB_UI_ADDRESS = "https://ui.perfetto.dev"
 
 
 class OpenUiUnitTest(unittest.TestCase):
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(builtins, "input")
   def test_download_trace_processor_successfully(self, mock_input,
-      mock_subprocess_run, mock_getsize, mock_exists):
+                                                 mock_subprocess_run,
+                                                 mock_getsize, mock_exists):
     mock_getsize.return_value = LARGE_FILE_SIZE
     mock_input.return_value = "y"
     mock_exists.side_effect = [False, False, True]
@@ -60,14 +61,15 @@ class OpenUiUnitTest(unittest.TestCase):
     self.assertEqual(trace_processor_path, TORQ_TEMP_TRACE_PROCESSOR)
     self.assertEqual(terminal_output.getvalue(), "")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(builtins, "input")
   def test_download_trace_processor_failed(self, mock_input,
-      mock_subprocess_run, mock_getsize, mock_exists):
+                                           mock_subprocess_run, mock_getsize,
+                                           mock_exists):
     mock_getsize.return_value = LARGE_FILE_SIZE
     mock_input.return_value = "y"
     mock_exists.side_effect = [False, False, False]
@@ -81,13 +83,13 @@ class OpenUiUnitTest(unittest.TestCase):
     self.assertEqual(terminal_output.getvalue(),
                      "Could not download perfetto scripts. Continuing.\n")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(builtins, "input")
-  def test_download_trace_processor_wrong_input(self, mock_input,
-      mock_getsize, mock_exists):
+  def test_download_trace_processor_wrong_input(self, mock_input, mock_getsize,
+                                                mock_exists):
     mock_getsize.return_value = LARGE_FILE_SIZE
     mock_input.return_value = "bad-input"
     mock_exists.side_effect = [False, False]
@@ -99,17 +101,17 @@ class OpenUiUnitTest(unittest.TestCase):
     self.assertNotEqual(error, None)
     self.assertEqual(error.message, "Invalid inputs.")
     self.assertEqual(error.suggestion, "Please accept or reject the download.")
-    self.assertEqual(terminal_output.getvalue(),
-                     "Invalid input. Please try again.\n"
-                     "Invalid input. Please try again.\n")
+    self.assertEqual(
+        terminal_output.getvalue(), "Invalid input. Please try again.\n"
+        "Invalid input. Please try again.\n")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(builtins, "input")
   def test_download_trace_processor_refused(self, mock_input, mock_getsize,
-      mock_exists):
+                                            mock_exists):
     mock_getsize.return_value = LARGE_FILE_SIZE
     mock_input.return_value = "n"
     mock_exists.side_effect = [False, False]
@@ -122,8 +124,8 @@ class OpenUiUnitTest(unittest.TestCase):
     self.assertEqual(terminal_output.getvalue(),
                      "Will continue without downloading perfetto scripts.\n")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(os.path, "abspath", autospec=True)
   @mock.patch.object(webbrowser, "open_new_tab", autospec=True)
@@ -132,8 +134,9 @@ class OpenUiUnitTest(unittest.TestCase):
   @mock.patch.object(os.path, "expanduser", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
   def test_open_trace_scripts_large_file(self, mock_popen, mock_expanduser,
-      mock_exists, mock_subprocess_run, mock_open_new_tab, mock_abspath,
-      mock_getsize):
+                                         mock_exists, mock_subprocess_run,
+                                         mock_open_new_tab, mock_abspath,
+                                         mock_getsize):
     mock_expanduser.return_value = ""
     mock_subprocess_run.return_value = None
     mock_open_new_tab.return_value = None
@@ -149,22 +152,22 @@ class OpenUiUnitTest(unittest.TestCase):
 
     mock_open_new_tab.assert_called()
     self.assertEqual(error, None)
-    self.assertEqual(terminal_output.getvalue(),
-                     "\033[93m##### Loading trace. #####\n##### "
-                     "Follow the directions in the Perfetto UI. Do not exit "
-                     "out of torq until you are done viewing the trace. Press "
-                     "CTRL+C to exit torq and close the trace_processor. "
-                     "#####\033[0m\nProcess was killed.\n")
+    self.assertEqual(
+        terminal_output.getvalue(), "\033[93m##### Loading trace. #####\n##### "
+        "Follow the directions in the Perfetto UI. Do not exit "
+        "out of torq until you are done viewing the trace. Press "
+        "CTRL+C to exit torq and close the trace_processor. "
+        "#####\033[0m\nProcess was killed.\n")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(webbrowser, "open_new_tab", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_open_trace_scripts_large_file_use_trace_processor_enabled(self,
-      mock_popen, mock_subprocess_run, mock_open_new_tab, mock_getsize,
+  def test_open_trace_scripts_large_file_use_trace_processor_enabled(
+      self, mock_popen, mock_subprocess_run, mock_open_new_tab, mock_getsize,
       mock_exists):
     mock_subprocess_run.return_value = None
     mock_open_new_tab.return_value = None
@@ -179,21 +182,23 @@ class OpenUiUnitTest(unittest.TestCase):
 
     mock_open_new_tab.assert_called()
     self.assertEqual(error, None)
-    self.assertEqual(terminal_output.getvalue(),
-                     "\033[93m##### Loading trace. #####\n##### "
-                     "Follow the directions in the Perfetto UI. Do not exit "
-                     "out of torq until you are done viewing the trace. Press "
-                     "CTRL+C to exit torq and close the trace_processor. "
-                     "#####\033[0m\nProcess was killed.\n")
+    self.assertEqual(
+        terminal_output.getvalue(), "\033[93m##### Loading trace. #####\n##### "
+        "Follow the directions in the Perfetto UI. Do not exit "
+        "out of torq until you are done viewing the trace. Press "
+        "CTRL+C to exit torq and close the trace_processor. "
+        "#####\033[0m\nProcess was killed.\n")
 
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(webbrowser, "open_new_tab", autospec=True)
   @mock.patch.object(socketserver, "TCPServer", autospec=True)
   def test_open_trace_scripts_small_file(self, mock_tcpserver,
-      mock_open_new_tab, mock_getsize):
+                                         mock_open_new_tab, mock_getsize):
+
     def handle_request():
       mock_process.fname_get_completed = 0
       return
+
     mock_process = type('', (), {})()
     mock_process.handle_request = handle_request
     mock_tcpserver.return_value.__enter__.return_value = mock_process
@@ -208,15 +213,15 @@ class OpenUiUnitTest(unittest.TestCase):
     self.assertEqual(error, None)
     self.assertEqual(terminal_output.getvalue(), "")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   @mock.patch.object(webbrowser, "open_new_tab", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(subprocess, "Popen", autospec=True)
-  def test_download_trace_processor_small_file_use_trace_processor_enabled(self,
-      mock_popen, mock_subprocess_run, mock_open_new_tab, mock_getsize,
+  def test_download_trace_processor_small_file_use_trace_processor_enabled(
+      self, mock_popen, mock_subprocess_run, mock_open_new_tab, mock_getsize,
       mock_exists):
     mock_subprocess_run.return_value = None
     mock_open_new_tab.return_value = None
@@ -231,19 +236,19 @@ class OpenUiUnitTest(unittest.TestCase):
 
     mock_open_new_tab.assert_called()
     self.assertEqual(error, None)
-    self.assertEqual(terminal_output.getvalue(),
-                     "\033[93m##### Loading trace. #####\n##### "
-                     "Follow the directions in the Perfetto UI. Do not exit "
-                     "out of torq until you are done viewing the trace. Press "
-                     "CTRL+C to exit torq and close the trace_processor. "
-                     "#####\033[0m\nProcess was killed.\n")
+    self.assertEqual(
+        terminal_output.getvalue(), "\033[93m##### Loading trace. #####\n##### "
+        "Follow the directions in the Perfetto UI. Do not exit "
+        "out of torq until you are done viewing the trace. Press "
+        "CTRL+C to exit torq and close the trace_processor. "
+        "#####\033[0m\nProcess was killed.\n")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
-  def test_download_trace_processor_android_scripts_exist(self, mock_getsize,
-      mock_exists):
+  def test_download_trace_processor_android_scripts_exist(
+      self, mock_getsize, mock_exists):
     mock_getsize.return_value = LARGE_FILE_SIZE
     mock_exists.return_value = True
     terminal_output = io.StringIO()
@@ -251,15 +256,15 @@ class OpenUiUnitTest(unittest.TestCase):
 
     trace_processor_path = download_trace_processor(TEST_FILE)
 
-    self.assertEqual(trace_processor_path, "%s%s"
-                     % (ANDROID_BUILD_TOP, ANDROID_TRACE_PROCESSOR))
+    self.assertEqual(trace_processor_path,
+                     "%s%s" % (ANDROID_BUILD_TOP, ANDROID_TRACE_PROCESSOR))
     self.assertEqual(terminal_output.getvalue(), "")
 
   @mock.patch.dict(os.environ, {}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "getsize", autospec=True)
   def test_download_trace_processor_temp_scripts_exist(self, mock_getsize,
-      mock_exists):
+                                                       mock_exists):
     mock_getsize.return_value = LARGE_FILE_SIZE
     mock_exists.return_value = True
     terminal_output = io.StringIO()
@@ -269,6 +274,7 @@ class OpenUiUnitTest(unittest.TestCase):
 
     self.assertEqual(trace_processor_path, TORQ_TEMP_TRACE_PROCESSOR)
     self.assertEqual(terminal_output.getvalue(), "")
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -36,9 +36,12 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
 
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP,
-                                "ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {
+          "ANDROID_BUILD_TOP": ANDROID_BUILD_TOP,
+          "ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT
+      },
+      clear=True)
   def test_create_parser_valid_symbols(self, mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_exists.return_value = True
@@ -50,16 +53,19 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
 
     self.assertEqual(error, None)
     self.assertEqual(args.symbols, SYMBOLS_PATH)
-    self.assertEqual(args.scripts_path, "%s/system/extras/simpleperf/scripts"
-                     % ANDROID_BUILD_TOP)
+    self.assertEqual(args.scripts_path,
+                     "%s/system/extras/simpleperf/scripts" % ANDROID_BUILD_TOP)
 
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP,
-                                "ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT},
-                   clear=True)
-  def test_create_parser_valid_android_product_out_no_symbols(self,
-      mock_isdir, mock_exists):
+  @mock.patch.dict(
+      os.environ, {
+          "ANDROID_BUILD_TOP": ANDROID_BUILD_TOP,
+          "ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT
+      },
+      clear=True)
+  def test_create_parser_valid_android_product_out_no_symbols(
+      self, mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_exists.return_value = True
     parser = self.set_up_parser("torq.py -p simpleperf")
@@ -69,15 +75,15 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
 
     self.assertEqual(error, None)
     self.assertEqual(args.symbols, ANDROID_PRODUCT_OUT)
-    self.assertEqual(args.scripts_path, "%s/system/extras/simpleperf/scripts"
-                     % ANDROID_BUILD_TOP)
+    self.assertEqual(args.scripts_path,
+                     "%s/system/extras/simpleperf/scripts" % ANDROID_BUILD_TOP)
 
-  @mock.patch.dict(os.environ, {"ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
-  def test_create_parser_invalid_android_product_no_symbols(self,
-      mock_isdir, mock_exists):
+  def test_create_parser_invalid_android_product_no_symbols(
+      self, mock_isdir, mock_exists):
     mock_isdir.return_value = False
     mock_exists.return_value = False
     parser = self.set_up_parser("torq.py -p simpleperf")
@@ -85,20 +91,21 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     args = parser.parse_args()
     args, error = verify_args(args)
 
-    self.assertEqual(error.message, ("%s is not a valid $ANDROID_PRODUCT_OUT."
-                                     % ANDROID_PRODUCT_OUT))
-    self.assertEqual(error.suggestion, "Set --symbols to a valid symbols lib "
-                                       "path or set $ANDROID_PRODUCT_OUT to "
-                                       "your android product out directory "
-                                       "(<ANDROID_BUILD_TOP>/out/target/product"
-                                       "/<TARGET>).")
+    self.assertEqual(
+        error.message,
+        ("%s is not a valid $ANDROID_PRODUCT_OUT." % ANDROID_PRODUCT_OUT))
+    self.assertEqual(
+        error.suggestion, "Set --symbols to a valid symbols lib "
+        "path or set $ANDROID_PRODUCT_OUT to "
+        "your android product out directory "
+        "(<ANDROID_BUILD_TOP>/out/target/product"
+        "/<TARGET>).")
 
-  @mock.patch.dict(os.environ, {},
-                   clear=True)
+  @mock.patch.dict(os.environ, {}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
-  def test_create_parser_invalid_symbols_no_android_product_out(self,
-      mock_isdir, mock_exists):
+  def test_create_parser_invalid_symbols_no_android_product_out(
+      self, mock_isdir, mock_exists):
     mock_isdir.return_value = False
     mock_exists.return_value = False
     parser = self.set_up_parser("torq.py -p simpleperf "
@@ -108,17 +115,18 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     args, error = verify_args(args)
 
     self.assertEqual(error.message, ("%s is not a valid path." % SYMBOLS_PATH))
-    self.assertEqual(error.suggestion, "Set --symbols to a valid symbols lib "
-                                       "path or set $ANDROID_PRODUCT_OUT to "
-                                       "your android product out directory "
-                                       "(<ANDROID_BUILD_TOP>/out/target/product"
-                                       "/<TARGET>).")
+    self.assertEqual(
+        error.suggestion, "Set --symbols to a valid symbols lib "
+        "path or set $ANDROID_PRODUCT_OUT to "
+        "your android product out directory "
+        "(<ANDROID_BUILD_TOP>/out/target/product"
+        "/<TARGET>).")
 
   @mock.patch.dict(os.environ, {}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
-  def test_create_parser_no_android_product_out_no_symbols(self, mock_isdir,
-      mock_exists):
+  def test_create_parser_no_android_product_out_no_symbols(
+      self, mock_isdir, mock_exists):
     mock_isdir.return_value = False
     mock_exists.return_value = False
     parser = self.set_up_parser("torq.py -p simpleperf")
@@ -127,20 +135,22 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     args, error = verify_args(args)
 
     self.assertEqual(error.message, "ANDROID_PRODUCT_OUT is not set.")
-    self.assertEqual(error.suggestion, "Set --symbols to a valid symbols lib "
-                                       "path or set $ANDROID_PRODUCT_OUT to "
-                                       "your android product out directory "
-                                       "(<ANDROID_BUILD_TOP>/out/target/"
-                                       "product/<TARGET>).")
+    self.assertEqual(
+        error.suggestion, "Set --symbols to a valid symbols lib "
+        "path or set $ANDROID_PRODUCT_OUT to "
+        "your android product out directory "
+        "(<ANDROID_BUILD_TOP>/out/target/"
+        "product/<TARGET>).")
 
-  @mock.patch.dict(os.environ, {"ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_PRODUCT_OUT": ANDROID_PRODUCT_OUT}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(builtins, "input")
   def test_create_parser_successfully_download_scripts(self, mock_input,
-      mock_subprocess_run, mock_isdir, mock_exists):
+                                                       mock_subprocess_run,
+                                                       mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_input.return_value = "y"
     mock_exists.side_effect = [False, True]
@@ -154,74 +164,77 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     self.assertEqual(args.symbols, ANDROID_PRODUCT_OUT)
     self.assertEqual(args.scripts_path, TORQ_TEMP_DIR)
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(builtins, "input")
   def test_create_parser_failed_to_download_scripts(self, mock_input,
-      mock_subprocess_run, mock_isdir, mock_exists):
+                                                    mock_subprocess_run,
+                                                    mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_input.return_value = "y"
     mock_exists.side_effect = [False, False, False]
     mock_subprocess_run.return_value = None
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
-                                % SYMBOLS_PATH)
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
+                                SYMBOLS_PATH)
 
     args = parser.parse_args()
     with self.assertRaises(Exception) as e:
       args, error = verify_args(args)
 
-    self.assertEqual(str(e.exception),
-                     "Error while downloading simpleperf scripts. Try "
-                     "again or set $ANDROID_BUILD_TOP to your android root "
-                     "path and make sure you have $ANDROID_BUILD_TOP/system"
-                     "/extras/simpleperf/scripts downloaded.")
+    self.assertEqual(
+        str(e.exception), "Error while downloading simpleperf scripts. Try "
+        "again or set $ANDROID_BUILD_TOP to your android root "
+        "path and make sure you have $ANDROID_BUILD_TOP/system"
+        "/extras/simpleperf/scripts downloaded.")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
   @mock.patch.object(builtins, "input")
   def test_create_parser_download_scripts_wrong_input(self, mock_input,
-      mock_isdir, mock_exists):
+                                                      mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_input.return_value = "bad-input"
     mock_exists.side_effect = [False, False]
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
-                                % SYMBOLS_PATH)
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
+                                SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error.message, "Invalid inputs.")
-    self.assertEqual(error.suggestion, "Set $ANDROID_BUILD_TOP to your android "
-                                       "root path and make sure you have "
-                                       "$ANDROID_BUILD_TOP/system/extras/"
-                                       "simpleperf/scripts downloaded.")
+    self.assertEqual(
+        error.suggestion, "Set $ANDROID_BUILD_TOP to your android "
+        "root path and make sure you have "
+        "$ANDROID_BUILD_TOP/system/extras/"
+        "simpleperf/scripts downloaded.")
 
-  @mock.patch.dict(os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP},
-                   clear=True)
+  @mock.patch.dict(
+      os.environ, {"ANDROID_BUILD_TOP": ANDROID_BUILD_TOP}, clear=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
   @mock.patch.object(builtins, "input")
-  def test_create_parser_download_scripts_refuse_download(self, mock_input,
-      mock_isdir, mock_exists):
+  def test_create_parser_download_scripts_refuse_download(
+      self, mock_input, mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_input.return_value = "n"
     mock_exists.side_effect = [False, False]
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
-                                % SYMBOLS_PATH)
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
+                                SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error.message, "Did not download simpleperf scripts.")
-    self.assertEqual(error.suggestion, "Set $ANDROID_BUILD_TOP to your android "
-                                       "root path and make sure you have "
-                                       "$ANDROID_BUILD_TOP/system/extras/"
-                                       "simpleperf/scripts downloaded.")
+    self.assertEqual(
+        error.suggestion, "Set $ANDROID_BUILD_TOP to your android "
+        "root path and make sure you have "
+        "$ANDROID_BUILD_TOP/system/extras/"
+        "simpleperf/scripts downloaded.")
 
 
 if __name__ == '__main__':

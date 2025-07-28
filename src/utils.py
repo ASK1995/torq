@@ -21,34 +21,39 @@ import subprocess
 import sys
 import time
 
+
 def path_exists(path: str):
   if path is None:
     return False
   return os.path.exists(os.path.expanduser(path))
+
 
 def dir_exists(path: str):
   if path is None:
     return False
   return os.path.isdir(os.path.expanduser(path))
 
+
 def convert_simpleperf_to_gecko(scripts_path, host_raw_trace_filename,
-    host_gecko_trace_filename, symbols):
+                                host_gecko_trace_filename, symbols):
   expanded_symbols = os.path.expanduser(symbols)
   expanded_scripts_path = os.path.expanduser(scripts_path)
   print("Building binary cache, please wait. If no samples were recorded,"
         " the trace will be empty.")
-  subprocess.run(("%s/binary_cache_builder.py -i %s -lib %s"
-                  % (expanded_scripts_path, host_raw_trace_filename,
-                     expanded_symbols)),
-                 shell=True)
-  subprocess.run(("%s/gecko_profile_generator.py -i %s > %s"
-                  % (expanded_scripts_path, host_raw_trace_filename,
-                     host_gecko_trace_filename)),
+  subprocess.run(
+      ("%s/binary_cache_builder.py -i %s -lib %s" %
+       (expanded_scripts_path, host_raw_trace_filename, expanded_symbols)),
+      shell=True)
+  subprocess.run(("%s/gecko_profile_generator.py -i %s > %s" %
+                  (expanded_scripts_path, host_raw_trace_filename,
+                   host_gecko_trace_filename)),
                  shell=True)
   if not path_exists(host_gecko_trace_filename):
     raise Exception("Gecko file was not created.")
 
+
 def wait_for_process_or_ctrl_c(process):
+
   def signal_handler(sig, frame):
     print("Exiting...")
     process.kill()
@@ -60,6 +65,7 @@ def wait_for_process_or_ctrl_c(process):
   process.wait()
   print("Process was killed.")
 
+
 def wait_for_output(pattern, process, timeout):
   start_time = time.time()
   while time.time() - start_time < timeout:
@@ -68,6 +74,7 @@ def wait_for_output(pattern, process, timeout):
       process.stderr = None
       return False
   return True  # Timed out
+
 
 def set_default_subparser(self, name):
   """
@@ -84,8 +91,8 @@ def set_default_subparser(self, name):
   # Get all global options
   global_opts = {}
   for action in self._actions:
-      for opt in action.option_strings:
-          global_opts[opt] = action.nargs
+    for opt in action.option_strings:
+      global_opts[opt] = action.nargs
 
   for idx, arg in enumerate(sys.argv[1:]):
     if arg in ['-h', '--help']:

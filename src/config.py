@@ -25,73 +25,94 @@ from .validation_error import ValidationError
 
 
 def add_config_parser(subparsers):
-  config_parser = subparsers.add_parser('config',
-                                        help=('The config subcommand used'
-                                              ' to list and show the'
-                                              ' predefined perfetto configs.'))
-  config_subparsers = config_parser.add_subparsers(dest='config_subcommand',
-                                                   help=('torq config'
-                                                         ' subcommands'))
-  config_subparsers.add_parser('list',
-                               help=('Command to list the predefined'
-                                     ' perfetto configs'))
-  config_show_parser = config_subparsers.add_parser('show',
-                                                    help=('Command to print'
-                                                          ' the '
-                                                          ' perfetto config'
-                                                          ' in the terminal.'))
-  config_show_parser.add_argument('config_name',
-                                  choices=['lightweight', 'default', 'memory'],
-                                  help=('Name of the predefined perfetto'
-                                        ' config to print.'))
-  config_show_parser.add_argument('-d', '--dur-ms', type=int,
-                      help=('The duration (ms) of the event. Determines when'
-                            ' to stop collecting performance data.'))
-  config_show_parser.add_argument('--excluded-ftrace-events', action='append',
-                      help=('Excludes specified ftrace event from the perfetto'
-                            ' config events.'))
-  config_show_parser.add_argument('--included-ftrace-events', action='append',
-                      help=('Includes specified ftrace event in the perfetto'
-                            ' config events.'))
+  config_parser = subparsers.add_parser(
+      'config',
+      help=('The config subcommand used'
+            ' to list and show the'
+            ' predefined perfetto configs.'))
+  config_subparsers = config_parser.add_subparsers(
+      dest='config_subcommand', help=('torq config'
+                                      ' subcommands'))
+  config_subparsers.add_parser(
+      'list', help=('Command to list the predefined'
+                    ' perfetto configs'))
+  config_show_parser = config_subparsers.add_parser(
+      'show',
+      help=('Command to print'
+            ' the '
+            ' perfetto config'
+            ' in the terminal.'))
+  config_show_parser.add_argument(
+      'config_name',
+      choices=['lightweight', 'default', 'memory'],
+      help=('Name of the predefined perfetto'
+            ' config to print.'))
+  config_show_parser.add_argument(
+      '-d',
+      '--dur-ms',
+      type=int,
+      help=('The duration (ms) of the event. Determines when'
+            ' to stop collecting performance data.'))
+  config_show_parser.add_argument(
+      '--excluded-ftrace-events',
+      action='append',
+      help=('Excludes specified ftrace event from the perfetto'
+            ' config events.'))
+  config_show_parser.add_argument(
+      '--included-ftrace-events',
+      action='append',
+      help=('Includes specified ftrace event in the perfetto'
+            ' config events.'))
 
-  config_pull_parser = config_subparsers.add_parser('pull',
-                                                    help=('Command to copy'
-                                                          ' a predefined config'
-                                                          ' to the specified'
-                                                          ' file path.'))
-  config_pull_parser.add_argument('config_name',
-                                  choices=['lightweight', 'default', 'memory'],
-                                  help='Name of the predefined config to copy')
-  config_pull_parser.add_argument('file_path', nargs='?',
-                                  help=('File path to copy the predefined'
-                                        ' config to'))
-  config_pull_parser.add_argument('-d', '--dur-ms', type=int,
-                      help=('The duration (ms) of the event. Determines when'
-                            ' to stop collecting performance data.'))
-  config_pull_parser.add_argument('--excluded-ftrace-events', action='append',
-                      help=('Excludes specified ftrace event from the perfetto'
-                            ' config events.'))
-  config_pull_parser.add_argument('--included-ftrace-events', action='append',
-                      help=('Includes specified ftrace event in the perfetto'
-                            ' config events.'))
+  config_pull_parser = config_subparsers.add_parser(
+      'pull',
+      help=('Command to copy'
+            ' a predefined config'
+            ' to the specified'
+            ' file path.'))
+  config_pull_parser.add_argument(
+      'config_name',
+      choices=['lightweight', 'default', 'memory'],
+      help='Name of the predefined config to copy')
+  config_pull_parser.add_argument(
+      'file_path',
+      nargs='?',
+      help=('File path to copy the predefined'
+            ' config to'))
+  config_pull_parser.add_argument(
+      '-d',
+      '--dur-ms',
+      type=int,
+      help=('The duration (ms) of the event. Determines when'
+            ' to stop collecting performance data.'))
+  config_pull_parser.add_argument(
+      '--excluded-ftrace-events',
+      action='append',
+      help=('Excludes specified ftrace event from the perfetto'
+            ' config events.'))
+  config_pull_parser.add_argument(
+      '--included-ftrace-events',
+      action='append',
+      help=('Includes specified ftrace event in the perfetto'
+            ' config events.'))
+
 
 def verify_config_args(args):
   if args.config_subcommand is None:
     return None, ValidationError(
         ("Command is invalid because torq config cannot be called"
-         " without a subcommand."),
-        ("Use one of the following subcommands:\n"
-         "\t torq config list\n"
-         "\t torq config show\n"
-         "\t torq config pull\n"))
+         " without a subcommand."), ("Use one of the following subcommands:\n"
+                                     "\t torq config list\n"
+                                     "\t torq config show\n"
+                                     "\t torq config pull\n"))
 
   if args.config_subcommand == "pull":
     if args.file_path is None:
       args.file_path = "./" + args.config_name + ".pbtxt"
     elif not os.path.isfile(args.file_path):
       return None, ValidationError(
-          ("Command is invalid because %s is not a valid filepath."
-           % args.file_path),
+          ("Command is invalid because %s is not a valid filepath." %
+           args.file_path),
           ("A default filepath can be used if you do not specify a file-path:\n"
            "\t torq pull default to copy to ./default.pbtxt\n"
            "\t torq pull lightweight to copy to ./lightweight.pbtxt\n"
@@ -116,7 +137,7 @@ def create_config_command(args):
       file_path = args.file_path
 
   command = ConfigCommand(type, config_name, file_path, dur_ms,
-      excluded_ftrace_events, included_ftrace_events)
+                          excluded_ftrace_events, included_ftrace_events)
   return command
 
 
@@ -124,8 +145,9 @@ class ConfigCommand(Command):
   """
   Represents commands which get information about the predefined configs.
   """
+
   def __init__(self, type, config_name, file_path, dur_ms,
-      excluded_ftrace_events, included_ftrace_events):
+               excluded_ftrace_events, included_ftrace_events):
     super().__init__(type)
     self.config_name = config_name
     self.file_path = file_path

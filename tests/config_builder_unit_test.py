@@ -216,7 +216,6 @@ duration_ms: {TEST_DUR_MS}
 {COMMON_CONFIG_ENDING_STRING}
 EOF'''
 
-
 LIGHTWEIGHT_CONFIG_9000_DUR_MS = f'''\
 {COMMON_DEFAULT_CONFIG_BEGINNING_STRING}
       min_prio: PRIO_ERROR
@@ -272,7 +271,6 @@ data_sources: {{
 duration_ms: {TEST_DUR_MS}
 {COMMON_CONFIG_ENDING_STRING}
 EOF'''
-
 
 MEMORY_CONFIG_9000_DUR_MS = f'''\
 {COMMON_DEFAULT_CONFIG_BEGINNING_STRING}
@@ -542,9 +540,9 @@ EOF'''
 class ConfigBuilderUnitTest(unittest.TestCase):
 
   def setUp(self):
-    self.command = ProfilerCommand(
-        None, "custom", None, None, DEFAULT_DUR_MS, None, None, "test-path",
-        None, None, None, None, None, None, None, None, None)
+    self.command = ProfilerCommand(None, "custom", None, None, DEFAULT_DUR_MS,
+                                   None, None, "test-path", None, None, None,
+                                   None, None, None, None, None, None)
 
   def test_build_default_config_setting_valid_dur_ms(self):
     self.command.dur_ms = TEST_DUR_MS
@@ -557,7 +555,8 @@ class ConfigBuilderUnitTest(unittest.TestCase):
   def test_build_lightweight_config_setting_valid_dur_ms(self):
     self.command.dur_ms = TEST_DUR_MS
 
-    config, error = build_lightweight_config(self.command, ANDROID_SDK_VERSION_T)
+    config, error = build_lightweight_config(self.command,
+                                             ANDROID_SDK_VERSION_T)
 
     self.assertEqual(error, None)
     self.assertEqual(config, LIGHTWEIGHT_CONFIG_9000_DUR_MS)
@@ -585,8 +584,9 @@ class ConfigBuilderUnitTest(unittest.TestCase):
     self.assertEqual(config, DEFAULT_CONFIG_NO_DUR_MS)
 
   def test_build_default_config_removing_valid_excluded_ftrace_events(self):
-    self.command.excluded_ftrace_events = ["power/suspend_resume",
-                                           "mm_event/mm_event_record"]
+    self.command.excluded_ftrace_events = [
+        "power/suspend_resume", "mm_event/mm_event_record"
+    ]
 
     config, error = build_default_config(self.command, ANDROID_SDK_VERSION_T)
 
@@ -600,11 +600,11 @@ class ConfigBuilderUnitTest(unittest.TestCase):
 
     self.assertEqual(config, None)
     self.assertNotEqual(error, None)
-    self.assertEqual(error.message, ("Cannot remove ftrace event %s from config"
-                                     " because it is not one of the config's"
-                                     " ftrace events." %
-                                     self.command.excluded_ftrace_events[0]
-                                     ))
+    self.assertEqual(
+        error.message,
+        ("Cannot remove ftrace event %s from config"
+         " because it is not one of the config's"
+         " ftrace events." % self.command.excluded_ftrace_events[0]))
     self.assertEqual(error.suggestion, ("Please specify one of the following"
                                         " possible ftrace events:\n\t"
                                         " dmabuf_heap/dma_heap_stat\n\t"
@@ -637,8 +637,9 @@ class ConfigBuilderUnitTest(unittest.TestCase):
                                         " workqueue/*"))
 
   def test_build_default_config_adding_valid_included_ftrace_events(self):
-    self.command.included_ftrace_events = ["mock_ftrace_event1",
-                                           "mock_ftrace_event2"]
+    self.command.included_ftrace_events = [
+        "mock_ftrace_event1", "mock_ftrace_event2"
+    ]
 
     config, error = build_default_config(self.command, ANDROID_SDK_VERSION_T)
 
@@ -652,11 +653,11 @@ class ConfigBuilderUnitTest(unittest.TestCase):
 
     self.assertEqual(config, None)
     self.assertNotEqual(error, None)
-    self.assertEqual(error.message, ("Cannot add ftrace event %s to config"
-                                     " because it is already one of the"
-                                     " config's ftrace events." %
-                                     self.command.included_ftrace_events[0]
-                                     ))
+    self.assertEqual(
+        error.message,
+        ("Cannot add ftrace event %s to config"
+         " because it is already one of the"
+         " config's ftrace events." % self.command.included_ftrace_events[0]))
     self.assertEqual(error.suggestion, ("Please do not specify any of the"
                                         " following ftrace events that are"
                                         " already included:\n\t"
@@ -689,8 +690,8 @@ class ConfigBuilderUnitTest(unittest.TestCase):
                                         " vmscan/*\n\t"
                                         " workqueue/*"))
 
-  @mock.patch("builtins.open", mock.mock_open(
-      read_data=CUSTOM_CONFIG_9000_DUR_MS))
+  @mock.patch("builtins.open",
+              mock.mock_open(read_data=CUSTOM_CONFIG_9000_DUR_MS))
   def test_build_custom_config_extracting_valid_dur_ms(self):
     config, error = build_custom_config(self.command)
 
@@ -698,18 +699,20 @@ class ConfigBuilderUnitTest(unittest.TestCase):
     self.assertEqual(config, f"<<EOF\n\n{CUSTOM_CONFIG_9000_DUR_MS}\n\n\nEOF")
     self.assertEqual(self.command.dur_ms, TEST_DUR_MS)
 
-  @mock.patch("builtins.open", mock.mock_open(
-      read_data=CUSTOM_CONFIG_9000_DUR_MS_WITH_WHITE_SPACE))
+  @mock.patch(
+      "builtins.open",
+      mock.mock_open(read_data=CUSTOM_CONFIG_9000_DUR_MS_WITH_WHITE_SPACE))
   def test_build_custom_config_extracting_valid_dur_ms_with_white_space(self):
     config, error = build_custom_config(self.command)
 
     self.assertEqual(error, None)
-    self.assertEqual(config, (
-        f"<<EOF\n\n{CUSTOM_CONFIG_9000_DUR_MS_WITH_WHITE_SPACE}\n\n\nEOF"))
+    self.assertEqual(
+        config,
+        (f"<<EOF\n\n{CUSTOM_CONFIG_9000_DUR_MS_WITH_WHITE_SPACE}\n\n\nEOF"))
     self.assertEqual(self.command.dur_ms, TEST_DUR_MS)
 
-  @mock.patch("builtins.open", mock.mock_open(
-      read_data=CUSTOM_CONFIG_INVALID_DUR_MS))
+  @mock.patch("builtins.open",
+              mock.mock_open(read_data=CUSTOM_CONFIG_INVALID_DUR_MS))
   def test_build_custom_config_extracting_invalid_dur_ms_error(self):
     config, error = build_custom_config(self.command)
 
@@ -717,22 +720,23 @@ class ConfigBuilderUnitTest(unittest.TestCase):
     self.assertEqual(config, None)
     self.assertEqual(error.message,
                      ("Failed to parse custom perfetto-config on local file"
-                      " path: %s. Invalid duration_ms field in config."
-                      % self.command.perfetto_config))
+                      " path: %s. Invalid duration_ms field in config." %
+                      self.command.perfetto_config))
     self.assertEqual(error.suggestion,
                      ("Make sure the perfetto config passed via arguments has a"
                       " valid duration_ms value."))
 
-  @mock.patch("builtins.open", mock.mock_open(
-      read_data=CUSTOM_CONFIG_NO_DUR_MS))
+  @mock.patch("builtins.open",
+              mock.mock_open(read_data=CUSTOM_CONFIG_NO_DUR_MS))
   def test_build_custom_config_injecting_dur_ms(self):
     duration_string = "duration_ms: " + str(self.command.dur_ms)
 
     config, error = build_custom_config(self.command)
 
     self.assertEqual(error, None)
-    self.assertEqual(config, (
-        f"<<EOF\n\n{CUSTOM_CONFIG_NO_DUR_MS}\n{duration_string}\n\nEOF"))
+    self.assertEqual(
+        config,
+        (f"<<EOF\n\n{CUSTOM_CONFIG_NO_DUR_MS}\n{duration_string}\n\nEOF"))
 
   @mock.patch.object(builtins, "open")
   def test_build_custom_config_parsing_error(self, mock_open_file):
@@ -743,10 +747,10 @@ class ConfigBuilderUnitTest(unittest.TestCase):
 
     self.assertNotEqual(error, None)
     self.assertEqual(config, None)
-    self.assertEqual(error.message, ("Failed to parse custom perfetto-config on"
-                                     " local file path: %s. %s"
-                                     % (self.command.perfetto_config,
-                                        TEST_FAILURE_MSG)))
+    self.assertEqual(error.message,
+                     ("Failed to parse custom perfetto-config on"
+                      " local file path: %s. %s" %
+                      (self.command.perfetto_config, TEST_FAILURE_MSG)))
     self.assertEqual(error.suggestion, None)
 
 

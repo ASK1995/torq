@@ -18,16 +18,18 @@ import signal
 
 from abc import ABC, abstractmethod
 
+
 class CommandExecutor(ABC):
   """
   Abstract base class representing a command executor.
   """
+
   def __init__(self):
     pass
 
   def execute(self, command, device):
     for sig in [signal.SIGINT, signal.SIGTERM]:
-      signal.signal(sig, lambda s, f: self.signal_handler(s,f))
+      signal.signal(sig, lambda s, f: self.signal_handler(s, f))
     error = device.check_device_connection()
     if error is not None:
       return error
@@ -43,4 +45,3 @@ class CommandExecutor(ABC):
 
   def signal_handler(self, sig, frame):
     pass
-

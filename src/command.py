@@ -16,10 +16,12 @@
 
 from abc import ABC, abstractmethod
 
+
 class Command(ABC):
   """
   Abstract base class representing a command.
   """
+
   def __init__(self, type):
     self.type = type
     self.command_executor = None
@@ -33,4 +35,3 @@ class Command(ABC):
   @abstractmethod
   def validate(self, device):
     raise NotImplementedError
-

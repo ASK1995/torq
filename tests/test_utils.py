@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+
 def parameterized(items, setup_func):
   """
   Function to create a decorator function that parameterizes a test method using
@@ -26,14 +27,19 @@ def parameterized(items, setup_func):
   Returns:
       A decorator function that runs setup function and subtests for each item.
   """
+
   def decorator(test_method):
+
     def decorated_test(self, *args, **kwargs):
       for item in items:
         with self.subTest(item=item):
           setup_func(self, item)
           test_method(self, item, *args, **kwargs)
+
     return decorated_test
+
   return decorator
+
 
 def parameterized_profiler(setup_func):
   return parameterized(["perfetto", "simpleperf"], setup_func)

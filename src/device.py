@@ -27,11 +27,13 @@ ADB_BOOT_COMPLETED_TIMED_OUT_LIMIT_SECS = 30
 POLLING_INTERVAL_SECS = 0.5
 SIMPLEPERF_TRACE_FILE = "/tmp/simpleperf-traces/perf.data"
 
+
 class AdbDevice:
   """
   Class representing a device. APIs interact with the current device through
   the adb bridge.
   """
+
   def __init__(self, serial):
     self.serial = serial
 
@@ -61,14 +63,14 @@ class AdbDevice:
       return ValidationError("There are currently no devices connected.", None)
     if self.serial is not None:
       if self.serial not in devices:
-        return ValidationError(("Device with serial %s is not connected."
-                                % self.serial), None)
+        return ValidationError(
+            ("Device with serial %s is not connected." % self.serial), None)
     elif "ANDROID_SERIAL" in os.environ:
       if os.environ["ANDROID_SERIAL"] not in devices:
         return ValidationError(("Device with serial %s is set as environment"
                                 " variable, ANDROID_SERIAL, but is not"
-                                " connected."
-                                % os.environ["ANDROID_SERIAL"]), None)
+                                " connected." % os.environ["ANDROID_SERIAL"]),
+                               None)
       self.serial = os.environ["ANDROID_SERIAL"]
     elif len(devices) == 1:
       self.serial = devices[0]
@@ -76,22 +78,21 @@ class AdbDevice:
       options = ""
       choices = {}
       for i, device in enumerate(devices):
-        options += ("%d: torq --serial %s %s\n\t"
-                    % (i, device, " ".join(sys.argv[1:])))
+        options += ("%d: torq --serial %s %s\n\t" %
+                    (i, device, " ".join(sys.argv[1:])))
         # Lambdas are bound to local scope, so assign var d to prevent
         # future values of device from overriding the current value we want
         choices[str(i)] = lambda d=device: d
       # Remove last \t
       options = options[:-1]
-      chosen_serial = (HandleInput("There is more than one device currently "
-                                   "connected. Press the corresponding number "
-                                   "for the following options to choose the "
-                                   "device you want to use.\n\t%sSelect "
-                                   "device[0-%d]: "
-                                   % (options, len(devices) - 1),
-                                   "Please select a valid option.",
-                                   choices)
-                       .handle_input())
+      chosen_serial = (
+          HandleInput(
+              "There is more than one device currently "
+              "connected. Press the corresponding number "
+              "for the following options to choose the "
+              "device you want to use.\n\t%sSelect "
+              "device[0-%d]: " % (options, len(devices) - 1),
+              "Please select a valid option.", choices).handle_input())
       if isinstance(chosen_serial, ValidationError):
         return chosen_serial
       print("Using device with serial %s" % chosen_serial)
@@ -110,10 +111,9 @@ class AdbDevice:
 
   def root_device(self):
     subprocess.run(["adb", "-s", self.serial, "root"])
-    if not self.poll_is_task_completed(ADB_ROOT_TIMED_OUT_LIMIT_SECS,
-                                       POLLING_INTERVAL_SECS,
-                                       lambda: self.serial in
-                                               self.get_adb_devices()):
+    if not self.poll_is_task_completed(
+        ADB_ROOT_TIMED_OUT_LIMIT_SECS, POLLING_INTERVAL_SECS,
+        lambda: self.serial in self.get_adb_devices()):
       raise Exception(("Device with serial %s took too long to reconnect after"
                        " being rooted." % self.serial))
 
@@ -121,37 +121,39 @@ class AdbDevice:
     subprocess.run(["adb", "-s", self.serial, "shell", "rm", "-f", file_path])
 
   def file_exists(self, file):
-    process = subprocess.run(["adb", "-s", self.serial, "shell", "ls",
-                              file], capture_output=True)
+    process = subprocess.run(["adb", "-s", self.serial, "shell", "ls", file],
+                             capture_output=True)
     return not "No such file or directory" in process.stderr.decode("utf-8")
 
   def start_perfetto_trace(self, config):
     return subprocess.Popen(("adb -s %s shell perfetto -c - --txt -o"
                              " /data/misc/perfetto-traces/"
-                             "trace.perfetto-trace %s"
-                             % (self.serial, config)), shell=True)
+                             "trace.perfetto-trace %s" % (self.serial, config)),
+                            shell=True)
 
   def start_simpleperf_trace(self, command):
     events_param = "-e " + ",".join(command.simpleperf_event)
     duration = ""
     if command.dur_ms is not None:
-      duration = "--duration %d" % int(math.ceil(command.dur_ms/1000))
-    return subprocess.Popen(("adb -s %s shell simpleperf record -a -f 1000 "
-                             "--exclude-perf --post-unwind=yes -m 8192 -g "
-                             "%s %s -o %s"
-                             % (self.serial, duration, events_param,
-                                SIMPLEPERF_TRACE_FILE)),
-                            shell=True)
+      duration = "--duration %d" % int(math.ceil(command.dur_ms / 1000))
+    return subprocess.Popen(
+        ("adb -s %s shell simpleperf record -a -f 1000 "
+         "--exclude-perf --post-unwind=yes -m 8192 -g "
+         "%s %s -o %s" %
+         (self.serial, duration, events_param, SIMPLEPERF_TRACE_FILE)),
+        shell=True)
 
   def pull_file(self, file_path, host_file):
     subprocess.run(["adb", "-s", self.serial, "pull", file_path, host_file])
 
   def get_all_users(self):
-    command_output = subprocess.run(["adb", "-s", self.serial, "shell", "pm",
-                                     "list", "users"], capture_output=True)
+    command_output = subprocess.run(
+        ["adb", "-s", self.serial, "shell", "pm", "list", "users"],
+        capture_output=True)
     output_lines = command_output.stdout.decode("utf-8").split("\n")[1:-1]
-    return [int((line.split("{", 1)[1]).split(":", 1)[0]) for line in
-            output_lines]
+    return [
+        int((line.split("{", 1)[1]).split(":", 1)[0]) for line in output_lines
+    ]
 
   def user_exists(self, user):
     users = self.get_all_users()
@@ -159,22 +161,25 @@ class AdbDevice:
       return ValidationError(("User ID %s does not exist on device with serial"
                               " %s." % (user, self.serial)),
                              ("Select from one of the following user IDs on"
-                              " device with serial %s: %s"
-                              % (self.serial, ", ".join(map(str, users)))))
+                              " device with serial %s: %s" %
+                              (self.serial, ", ".join(map(str, users)))))
     return None
 
   def get_current_user(self):
-    command_output = subprocess.run(["adb", "-s", self.serial, "shell", "am",
-                                     "get-current-user"], capture_output=True)
+    command_output = subprocess.run(
+        ["adb", "-s", self.serial, "shell", "am", "get-current-user"],
+        capture_output=True)
     return int(command_output.stdout.decode("utf-8").split()[0])
 
   def perform_user_switch(self, user):
-    subprocess.run(["adb", "-s", self.serial, "shell", "am", "switch-user",
-                    str(user)])
+    subprocess.run(
+        ["adb", "-s", self.serial, "shell", "am", "switch-user",
+         str(user)])
 
   def write_to_file(self, file_path, host_file_string):
-    subprocess.run(("adb -s %s shell 'cat > %s %s'"
-                    % (self.serial, file_path, host_file_string)), shell=True)
+    subprocess.run(("adb -s %s shell 'cat > %s %s'" %
+                    (self.serial, file_path, host_file_string)),
+                   shell=True)
 
   def set_prop(self, prop, value):
     subprocess.run(["adb", "-s", self.serial, "shell", "setprop", prop, value])
@@ -184,10 +189,9 @@ class AdbDevice:
 
   def reboot(self):
     subprocess.run(["adb", "-s", self.serial, "reboot"])
-    if not self.poll_is_task_completed(ADB_ROOT_TIMED_OUT_LIMIT_SECS,
-                                       POLLING_INTERVAL_SECS,
-                                       lambda: self.serial not in
-                                               self.get_adb_devices()):
+    if not self.poll_is_task_completed(
+        ADB_ROOT_TIMED_OUT_LIMIT_SECS, POLLING_INTERVAL_SECS,
+        lambda: self.serial not in self.get_adb_devices()):
       raise Exception(("Device with serial %s took too long to start"
                        " rebooting." % self.serial))
 
@@ -195,9 +199,9 @@ class AdbDevice:
     subprocess.run(["adb", "-s", self.serial, "wait-for-device"])
 
   def is_boot_completed(self):
-    command_output = subprocess.run(["adb", "-s", self.serial, "shell",
-                                     "getprop", "sys.boot_completed"],
-                                    capture_output=True)
+    command_output = subprocess.run(
+        ["adb", "-s", self.serial, "shell", "getprop", "sys.boot_completed"],
+        capture_output=True)
     return command_output.stdout.decode("utf-8").strip() == "1"
 
   def wait_for_boot_to_complete(self):
@@ -208,14 +212,17 @@ class AdbDevice:
                        " rebooting." % self.serial))
 
   def get_packages(self):
-    return [package.removeprefix("package:") for package in subprocess.run(
-        ["adb", "-s", self.serial, "shell", "pm", "list", "packages"],
-        capture_output=True).stdout.decode("utf-8").splitlines()]
+    return [
+        package.removeprefix("package:") for package in subprocess.run(
+            ["adb", "-s", self.serial, "shell", "pm", "list", "packages"],
+            capture_output=True).stdout.decode("utf-8").splitlines()
+    ]
 
   def get_pid(self, package):
-    return subprocess.run("adb -s %s shell pidof %s" % (self.serial, package),
-                          shell=True, capture_output=True
-                          ).stdout.decode("utf-8").split("\n")[0]
+    return subprocess.run(
+        "adb -s %s shell pidof %s" % (self.serial, package),
+        shell=True,
+        capture_output=True).stdout.decode("utf-8").split("\n")[0]
 
   def is_package_running(self, package):
     return self.get_pid(package) != ""
@@ -226,8 +233,8 @@ class AdbDevice:
         capture_output=True).stderr.decode("utf-8").split("\n")[0] != "":
       return ValidationError(("Cannot start package %s on device with"
                               " serial %s because %s is a service package,"
-                              " which doesn't implement a MAIN activity."
-                              % (package, self.serial, package)), None)
+                              " which doesn't implement a MAIN activity." %
+                              (package, self.serial, package)), None)
     return None
 
   def kill_process(self, name):
@@ -236,12 +243,13 @@ class AdbDevice:
       subprocess.run(["adb", "-s", self.serial, "shell", "kill", "-9", pid])
 
   def send_signal(self, process_name, signal):
-    subprocess.run(["adb", "-s", self.serial, "shell", "pkill", "-l",
-                    signal, process_name])
+    subprocess.run([
+        "adb", "-s", self.serial, "shell", "pkill", "-l", signal, process_name
+    ])
 
   def force_stop_package(self, package):
-    subprocess.run(["adb", "-s", self.serial, "shell", "am", "force-stop",
-                    package])
+    subprocess.run(
+        ["adb", "-s", self.serial, "shell", "am", "force-stop", package])
 
   def get_prop(self, prop):
     return subprocess.run(
@@ -252,8 +260,9 @@ class AdbDevice:
     return int(self.get_prop("ro.build.version.sdk"))
 
   def create_directory(self, directory):
-    process = subprocess.run(["adb", "-s", self.serial, "shell", "mkdir", "-p",
-                              directory], capture_output=True)
+    process = subprocess.run(
+        ["adb", "-s", self.serial, "shell", "mkdir", "-p", directory],
+        capture_output=True)
     if len(process.stderr.decode("utf-8")) != 0:
       return ValidationError("Unable to create directory on device.",
                              "Check device configuration.")
@@ -265,8 +274,10 @@ class AdbDevice:
     for event in simpleperf_events:
       grep_command += " -e " + event.lower()
 
-    output = subprocess.run(["adb", "-s", self.serial, "shell",
-                             "simpleperf", "list", "|", grep_command],
+    output = subprocess.run([
+        "adb", "-s", self.serial, "shell", "simpleperf", "list", "|",
+        grep_command
+    ],
                             capture_output=True)
 
     if output is None or len(output.stdout) == 0:
@@ -290,9 +301,8 @@ class AdbDevice:
           break
 
     if len(events_copy) > 0:
-      return ValidationError("The following simpleperf event(s) are invalid:"
-                             " %s."
-                             % events_copy,
-                             "Run adb shell simpleperf list to"
-                             " see valid simpleperf events.")
+      return ValidationError(
+          "The following simpleperf event(s) are invalid:"
+          " %s." % events_copy, "Run adb shell simpleperf list to"
+          " see valid simpleperf events.")
     return None

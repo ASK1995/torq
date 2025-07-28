@@ -354,16 +354,19 @@ incremental_state_config {{
 class ConfigCommandExecutorUnitTest(unittest.TestCase):
 
   def setUp(self):
-    self.mock_device = mock.create_autospec(AdbDevice, instance=True,
-                                            serial=TEST_SERIAL)
+    self.mock_device = mock.create_autospec(
+        AdbDevice, instance=True, serial=TEST_SERIAL)
     self.mock_device.check_device_connection.return_value = None
     self.mock_device.get_android_sdk_version.return_value = (
         ANDROID_SDK_VERSION_T)
 
   @staticmethod
   def generate_mock_completed_process(stdout_string=b'\n', stderr_string=b'\n'):
-    return mock.create_autospec(subprocess.CompletedProcess, instance=True,
-                                stdout=stdout_string, stderr=stderr_string)
+    return mock.create_autospec(
+        subprocess.CompletedProcess,
+        instance=True,
+        stdout=stdout_string,
+        stderr=stderr_string)
 
   def test_config_list(self):
     terminal_output = io.StringIO()
@@ -373,8 +376,9 @@ class ConfigCommandExecutorUnitTest(unittest.TestCase):
     error = self.command.execute(self.mock_device)
 
     self.assertEqual(error, None)
-    self.assertEqual(terminal_output.getvalue(), (
-        "%s\n" % "\n".join(list(PREDEFINED_PERFETTO_CONFIGS.keys()))))
+    self.assertEqual(
+        terminal_output.getvalue(),
+        ("%s\n" % "\n".join(list(PREDEFINED_PERFETTO_CONFIGS.keys()))))
 
   def test_config_show(self):
     terminal_output = io.StringIO()

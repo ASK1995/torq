@@ -21,19 +21,19 @@ ANDROID_SDK_VERSION_T = 33
 
 
 def create_ftrace_events_string(predefined_ftrace_events,
-    excluded_ftrace_events, included_ftrace_events):
+                                excluded_ftrace_events, included_ftrace_events):
   if excluded_ftrace_events is not None:
     for event in excluded_ftrace_events:
       if event in predefined_ftrace_events:
         predefined_ftrace_events.remove(event)
       else:
-        return None, ValidationError(("Cannot remove ftrace event %s from"
-                                      " config because it is not one"
-                                      " of the config's ftrace events."
-                                      % event),
-                                     ("Please specify one of the following"
-                                      " possible ftrace events:\n\t %s"
-                                      % "\n\t ".join(predefined_ftrace_events)))
+        return None, ValidationError(
+            ("Cannot remove ftrace event %s from"
+             " config because it is not one"
+             " of the config's ftrace events." % event),
+            ("Please specify one of the following"
+             " possible ftrace events:\n\t %s" %
+             "\n\t ".join(predefined_ftrace_events)))
 
   if included_ftrace_events is not None:
     for event in included_ftrace_events:
@@ -45,21 +45,31 @@ def create_ftrace_events_string(predefined_ftrace_events,
                                       " config's ftrace events." % event),
                                      ("Please do not specify any of the"
                                       " following ftrace events that are"
-                                      " already included:\n\t %s"
-                                      % "\n\t ".join(predefined_ftrace_events)))
+                                      " already included:\n\t %s" %
+                                      "\n\t ".join(predefined_ftrace_events)))
 
   ftrace_events_string = ("ftrace_events: \"%s\"" % ("""\"
           ftrace_events: \"""".join(predefined_ftrace_events)))
   return ftrace_events_string, None
 
 
-def build_predefined_config(command, android_sdk_version,
-    predefined_ftrace_events = None, sys_stats_events = None, predefined_atrace_events = None,
-    log_priority = "PRIO_VERBOSE", buffers = None, linux_process_stats = None,
-    android_logs = None, android_packages = None, sys_stats = None,
-    surface_flinger = None, ftrace = None, metatrace = None,
-    miscellaneous_options = None, incremental_state = None,
-    extra_configs = ""):
+def build_predefined_config(command,
+                            android_sdk_version,
+                            predefined_ftrace_events=None,
+                            sys_stats_events=None,
+                            predefined_atrace_events=None,
+                            log_priority="PRIO_VERBOSE",
+                            buffers=None,
+                            linux_process_stats=None,
+                            android_logs=None,
+                            android_packages=None,
+                            sys_stats=None,
+                            surface_flinger=None,
+                            ftrace=None,
+                            metatrace=None,
+                            miscellaneous_options=None,
+                            incremental_state=None,
+                            extra_configs=""):
   if predefined_ftrace_events is None:
     predefined_ftrace_events = [
         "dmabuf_heap/dma_heap_stat",
@@ -291,6 +301,7 @@ def build_predefined_config(command, android_sdk_version,
     EOF'''
   return textwrap.dedent(config), None
 
+
 def build_default_config(command, android_sdk_version):
   return build_predefined_config(command, android_sdk_version)
 
@@ -335,10 +346,14 @@ def build_lightweight_config(command, android_sdk_version):
           atrace_apps: "com.google.android.gms"
           atrace_apps: "com.google.android.gms.persistent"
           atrace_apps: "android:ui"'''
-  return build_predefined_config(command, android_sdk_version,
-                                 predefined_ftrace_events, sys_stats_config,
-                                 atrace_events, "PRIO_ERROR",
-                                 surface_flinger="")
+  return build_predefined_config(
+      command,
+      android_sdk_version,
+      predefined_ftrace_events,
+      sys_stats_config,
+      atrace_events,
+      "PRIO_ERROR",
+      surface_flinger="")
 
 
 def build_memory_config(command, android_sdk_version):
@@ -426,11 +441,15 @@ def build_memory_config(command, android_sdk_version):
         }}
       }}
     }}'''
-  return build_predefined_config(command, android_sdk_version,
-                                 predefined_ftrace_events, sys_stats_config,
-                                 atrace_events, "PRIO_ERROR",
-                                 surface_flinger="",
-                                 extra_configs = extra_configs)
+  return build_predefined_config(
+      command,
+      android_sdk_version,
+      predefined_ftrace_events,
+      sys_stats_config,
+      atrace_events,
+      "PRIO_ERROR",
+      surface_flinger="",
+      extra_configs=extra_configs)
 
 
 PREDEFINED_PERFETTO_CONFIGS = {
@@ -456,15 +475,15 @@ def build_custom_config(command):
           command.dur_ms = int(duration)
         file_content += line
   except ValueError:
-    return None, ValidationError(("Failed to parse custom perfetto-config on"
-                                  " local file path: %s. Invalid duration_ms"
-                                  " field in config."
-                                  % command.perfetto_config),
-                                 ("Make sure the perfetto config passed via"
-                                  " arguments has a valid duration_ms value."))
+    return None, ValidationError(
+        ("Failed to parse custom perfetto-config on"
+         " local file path: %s. Invalid duration_ms"
+         " field in config." % command.perfetto_config),
+        ("Make sure the perfetto config passed via"
+         " arguments has a valid duration_ms value."))
   except Exception as e:
-    return None, ValidationError(("Failed to parse custom perfetto-config on"
-                                  " local file path: %s. %s"
-                                  % (command.perfetto_config, str(e))), None)
+    return None, ValidationError(
+        ("Failed to parse custom perfetto-config on"
+         " local file path: %s. %s" % (command.perfetto_config, str(e))), None)
   config_string = f"<<EOF\n\n{file_content}\n{appended_duration}\n\nEOF"
   return config_string, None

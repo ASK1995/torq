@@ -19,23 +19,27 @@ from .open_ui_utils import open_trace, WEB_UI_ADDRESS
 from .utils import path_exists
 from .validation_error import ValidationError
 
+
 def add_open_parser(subparsers):
-  open_parser = subparsers.add_parser('open',
-                                      help=('The open subcommand is used '
-                                            'to open trace files in the '
-                                            'perfetto ui.'))
+  open_parser = subparsers.add_parser(
+      'open',
+      help=('The open subcommand is used '
+            'to open trace files in the '
+            'perfetto ui.'))
   open_parser.add_argument('file_path', help='Path to trace file.')
-  open_parser.add_argument('--use_trace_processor', default=False,
-                           action='store_true',
-                                  help=('Enables using trace_processor to open '
-                                        'the trace regardless of its size.'))
+  open_parser.add_argument(
+      '--use_trace_processor',
+      default=False,
+      action='store_true',
+      help=('Enables using trace_processor to open '
+            'the trace regardless of its size.'))
 
 
 def verify_open_args(args):
   if not path_exists(args.file_path):
     return None, ValidationError(
-        "Command is invalid because %s is an invalid file path."
-        % args.file_path, "Make sure your file exists.")
+        "Command is invalid because %s is an invalid file path." %
+        args.file_path, "Make sure your file exists.")
 
   return args, None
 
@@ -44,6 +48,7 @@ class OpenCommand(Command):
   """
   Represents commands which open traces.
   """
+
   def __init__(self, file_path, use_trace_processor):
     super().__init__(type)
     self.file_path = file_path
@@ -54,4 +59,3 @@ class OpenCommand(Command):
 
   def execute(self, device):
     return open_trace(self.file_path, WEB_UI_ADDRESS, self.use_trace_processor)
-

@@ -66,8 +66,8 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(error, None)
     self.assertEqual(args.event, "boot")
 
-    parser = self.set_up_parser(
-        "torq.py -e user-switch --to-user %s" % str(TEST_USER_ID))
+    parser = self.set_up_parser("torq.py -e user-switch --to-user %s" %
+                                str(TEST_USER_ID))
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -75,8 +75,8 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(error, None)
     self.assertEqual(args.event, "user-switch")
 
-    parser = self.set_up_parser(
-        "torq.py -e app-startup --app %s" % TEST_PACKAGE)
+    parser = self.set_up_parser("torq.py -e app-startup --app %s" %
+                                TEST_PACKAGE)
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -103,8 +103,8 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(error, None)
     self.assertEqual(args.profiler, "perfetto")
 
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
-                                % SYMBOLS_PATH)
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
+                                SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -275,9 +275,9 @@ class TorqUnitTest(unittest.TestCase):
     args = parser.parse_args()
     args, error = verify_args(args)
 
-    self.assertEqual(error.message,  ("Command is invalid because"
-                                      " --between-dur-ms cannot be set to a"
-                                      " smaller value than 3000."))
+    self.assertEqual(error.message, ("Command is invalid because"
+                                     " --between-dur-ms cannot be set to a"
+                                     " smaller value than 3000."))
     self.assertEqual(error.suggestion, ("Set --between-dur-ms 3000 to wait"
                                         " 3 seconds between each run."))
 
@@ -416,14 +416,14 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(error.message, ("Command is invalid because --from-user"
                                      " is passed, but --event is not set to"
                                      " user-switch."))
-    self.assertEqual(error.suggestion, ("Set --event user-switch --from-user %s"
-                                        " to perform a user-switch from user"
-                                        " %s." % (str(TEST_USER_ID),
-                                                  str(TEST_USER_ID))))
+    self.assertEqual(error.suggestion,
+                     ("Set --event user-switch --from-user %s"
+                      " to perform a user-switch from user"
+                      " %s." % (str(TEST_USER_ID), str(TEST_USER_ID))))
 
   def test_verify_args_to_user_and_event_valid_dependency(self):
-    parser = self.set_up_parser(
-        "torq.py -e user-switch --to-user %s" % str(TEST_USER_ID))
+    parser = self.set_up_parser("torq.py -e user-switch --to-user %s" %
+                                str(TEST_USER_ID))
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -450,10 +450,10 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(error.message, ("Command is invalid because --to-user"
                                      " is passed, but --event is not set to"
                                      " user-switch."))
-    self.assertEqual(error.suggestion, ("Set --event user-switch --to-user %s"
-                                        " to perform a user-switch to user"
-                                        " %s." % (str(TEST_USER_ID),
-                                                  str(TEST_USER_ID))))
+    self.assertEqual(error.suggestion,
+                     ("Set --event user-switch --to-user %s"
+                      " to perform a user-switch to user"
+                      " %s." % (str(TEST_USER_ID), str(TEST_USER_ID))))
 
   def test_verify_args_app_and_event_valid_dependency(self):
     parser = self.set_up_parser("torq.py -e app-startup -a %s" % TEST_PACKAGE)
@@ -489,12 +489,12 @@ class TorqUnitTest(unittest.TestCase):
 
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
-  def test_verify_args_profiler_and_simpleperf_event_valid_dependencies(self,
-      mock_isdir, mock_exists):
+  def test_verify_args_profiler_and_simpleperf_event_valid_dependencies(
+      self, mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_exists.return_value = True
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s"
-                                % SYMBOLS_PATH)
+    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
+                                SYMBOLS_PATH)
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -513,8 +513,7 @@ class TorqUnitTest(unittest.TestCase):
     self.assertEqual(len(args.simpleperf_event), 1)
     self.assertEqual(args.simpleperf_event[0], "cpu-cycles")
 
-  def test_verify_args_profiler_and_simpleperf_event_invalid_dependencies(
-      self):
+  def test_verify_args_profiler_and_simpleperf_event_invalid_dependencies(self):
     parser = self.set_up_parser("torq.py -s cpu-cycles")
 
     args = parser.parse_args()
@@ -644,8 +643,8 @@ class TorqUnitTest(unittest.TestCase):
     args, error = verify_args(args)
 
     self.assertEqual(error, None)
-    self.assertEqual(args.excluded_ftrace_events, ["power/cpu_idle",
-                                                   "ion/ion_stat"])
+    self.assertEqual(args.excluded_ftrace_events,
+                     ["power/cpu_idle", "ion/ion_stat"])
 
   def test_verify_args_multiple_invalid_excluded_ftrace_events(self):
     parser = self.set_up_parser(("torq.py --excluded-ftrace-events"
@@ -671,8 +670,8 @@ class TorqUnitTest(unittest.TestCase):
     args, error = verify_args(args)
 
     self.assertEqual(error, None)
-    self.assertEqual(args.included_ftrace_events, ["power/cpu_idle",
-                                                   "ion/ion_stat"])
+    self.assertEqual(args.included_ftrace_events,
+                     ["power/cpu_idle", "ion/ion_stat"])
 
   def test_verify_args_multiple_invalid_included_ftrace_events(self):
     parser = self.set_up_parser(("torq.py --included-ftrace-events"
@@ -722,12 +721,12 @@ class TorqUnitTest(unittest.TestCase):
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
   def test_verify_args_multiple_valid_simpleperf_events(self, mock_isdir,
-      mock_exists):
+                                                        mock_exists):
     mock_isdir.return_value = True
     mock_exists.return_value = True
-    parser = self.set_up_parser(("torq.py -p simpleperf -s cpu-cycles"
-                                 " -s instructions --symbols %s"
-                                 % SYMBOLS_PATH))
+    parser = self.set_up_parser(
+        ("torq.py -p simpleperf -s cpu-cycles"
+         " -s instructions --symbols %s" % SYMBOLS_PATH))
 
     args = parser.parse_args()
     args, error = verify_args(args)
@@ -883,20 +882,21 @@ class TorqUnitTest(unittest.TestCase):
   def test_verify_args_default_config_pull_invalid_filepath(self, mock_is_file):
     mock_invalid_file_path = "mock-invalid-file-path"
     mock_is_file.return_value = False
-    parser = self.set_up_parser(("torq.py config pull default %s"
-                                 % mock_invalid_file_path))
+    parser = self.set_up_parser(
+        ("torq.py config pull default %s" % mock_invalid_file_path))
 
     args = parser.parse_args()
     args, error = verify_args(args)
 
-    self.assertEqual(error.message, (
-        "Command is invalid because %s is not a valid filepath."
-        % mock_invalid_file_path))
-    self.assertEqual(error.suggestion, (
-        "A default filepath can be used if you do not specify a file-path:\n\t"
-        " torq pull default to copy to ./default.pbtxt\n\t"
-        " torq pull lightweight to copy to ./lightweight.pbtxt\n\t "
-        "torq pull memory to copy to ./memory.pbtxt"))
+    self.assertEqual(error.message,
+                     ("Command is invalid because %s is not a valid filepath." %
+                      mock_invalid_file_path))
+    self.assertEqual(
+        error.suggestion,
+        ("A default filepath can be used if you do not specify a file-path:\n\t"
+         " torq pull default to copy to ./default.pbtxt\n\t"
+         " torq pull lightweight to copy to ./lightweight.pbtxt\n\t "
+         "torq pull memory to copy to ./memory.pbtxt"))
 
   def test_get_command_config_list(self):
     parser = self.set_up_parser("torq.py config list")
@@ -953,8 +953,9 @@ class TorqUnitTest(unittest.TestCase):
     args = parser.parse_args()
     args, error = verify_args(args)
 
-    self.assertEqual(error.message, "Command is invalid because %s is an "
-                                    "invalid file path." % TEST_FILE)
+    self.assertEqual(
+        error.message, "Command is invalid because %s is an "
+        "invalid file path." % TEST_FILE)
     self.assertEqual(error.suggestion, "Make sure your file exists.")
 
 

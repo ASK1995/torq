@@ -27,7 +27,7 @@ class UtilsUnitTest(unittest.TestCase):
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   def test_convert_simpleperf_to_gecko_success(self, mock_exists,
-      mock_subprocess_run):
+                                               mock_subprocess_run):
     mock_exists.return_value = True
     mock_subprocess_run.return_value = None
 
@@ -38,7 +38,7 @@ class UtilsUnitTest(unittest.TestCase):
   @mock.patch.object(subprocess, "run", autospec=True)
   @mock.patch.object(os.path, "exists", autospec=True)
   def test_convert_simpleperf_to_gecko_failure(self, mock_exists,
-      mock_subprocess_run):
+                                               mock_subprocess_run):
     mock_exists.return_value = False
     mock_subprocess_run.return_value = None
 

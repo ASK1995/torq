@@ -16,38 +16,31 @@
 
 import argparse
 
-from .config import (
-    add_config_parser,
-    verify_config_args,
-    create_config_command,
-    PREDEFINED_PERFETTO_CONFIGS
-)
+from .config import (add_config_parser, verify_config_args,
+                     create_config_command, PREDEFINED_PERFETTO_CONFIGS)
 from .device import AdbDevice
-from .open import (
-    add_open_parser,
-    OpenCommand,
-    verify_open_args
-)
-from .profiler import (
-    add_profiler_parser,
-    verify_profiler_args,
-    ProfilerCommand
-)
+from .open import (add_open_parser, OpenCommand, verify_open_args)
+from .profiler import (add_profiler_parser, verify_profiler_args,
+                       ProfilerCommand)
 from .utils import set_default_subparser
 from .vm import add_vm_parser, create_vm_command
 
 # Add default parser capability to argparse
 argparse.ArgumentParser.set_default_subparser = set_default_subparser
 
+
 def create_parser():
-  parser = argparse.ArgumentParser(prog='torq command',
-                                   description=('Torq CLI tool for performance'
-                                                ' tests.'))
+  parser = argparse.ArgumentParser(
+      prog='torq command',
+      description=('Torq CLI tool for performance'
+                   ' tests.'))
   # Global options
   # NOTE: All global options must have the 'nargs' option set to an int.
-  parser.add_argument('--serial', nargs=1,
-                      help=(('Specifies serial of the device that will be'
-                             ' used.')))
+  parser.add_argument(
+      '--serial',
+      nargs=1,
+      help=(('Specifies serial of the device that will be'
+             ' used.')))
 
   subparsers = parser.add_subparsers(dest='subcommands', help='Subcommands')
 
@@ -75,14 +68,16 @@ def verify_args(args):
     case _:
       raise ValueError("Invalid command type used")
 
+
 def create_profiler_command(args):
   return ProfilerCommand("profiler", args.event, args.profiler, args.out_dir,
-                         args.dur_ms,
-                         args.app, args.runs, args.simpleperf_event,
-                         args.perfetto_config, args.between_dur_ms,
-                         args.ui, args.excluded_ftrace_events,
+                         args.dur_ms, args.app, args.runs,
+                         args.simpleperf_event, args.perfetto_config,
+                         args.between_dur_ms, args.ui,
+                         args.excluded_ftrace_events,
                          args.included_ftrace_events, args.from_user,
                          args.to_user, args.scripts_path, args.symbols)
+
 
 def get_command(args):
   match args.subcommands:

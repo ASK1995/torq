@@ -57,6 +57,7 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
   def log_message(self, format, *args):
     pass
 
+
 def download_trace_processor(path):
   if (("ANDROID_BUILD_TOP" in os.environ and
        path_exists(os.environ["ANDROID_BUILD_TOP"] + ANDROID_TRACE_PROCESSOR))):
@@ -65,11 +66,11 @@ def download_trace_processor(path):
     return TORQ_TEMP_TRACE_PROCESSOR
 
   def download_accepted_callback():
-    subprocess.run(("mkdir -p %s && wget -P %s "
-                    "https://get.perfetto.dev/trace_processor && chmod +x "
-                    "%s/trace_processor"
-                    % (TORQ_TEMP_DIR, TORQ_TEMP_DIR, TORQ_TEMP_DIR)),
-                   shell=True)
+    subprocess.run(
+        ("mkdir -p %s && wget -P %s "
+         "https://get.perfetto.dev/trace_processor && chmod +x "
+         "%s/trace_processor" % (TORQ_TEMP_DIR, TORQ_TEMP_DIR, TORQ_TEMP_DIR)),
+        shell=True)
 
     if not path_exists(TORQ_TEMP_TRACE_PROCESSOR):
       print("Could not download perfetto scripts. Continuing.")
@@ -81,18 +82,20 @@ def download_trace_processor(path):
     print("Will continue without downloading perfetto scripts.")
     return None
 
-  return (HandleInput("You do not have $ANDROID_BUILD_TOP configured "
-                     "with the $ANDROID_BUILD_TOP%s directory.\nYour "
-                     "perfetto trace is larger than 512MB, so "
-                     "attempting to load the trace in the perfetto UI "
-                     "without the perfetto scripts might not work.\n"
-                     "torq can download the perfetto scripts to '%s'. "
-                     "Are you ok with this download? [Y/N]: "
-                     % (ANDROID_PERFETTO_TOOLS_DIR, TORQ_TEMP_DIR),
-                     "Please accept or reject the download.",
-                     {"y": download_accepted_callback,
-                      "n": rejected_callback})
-          .handle_input())
+  return (HandleInput(
+      "You do not have $ANDROID_BUILD_TOP configured "
+      "with the $ANDROID_BUILD_TOP%s directory.\nYour "
+      "perfetto trace is larger than 512MB, so "
+      "attempting to load the trace in the perfetto UI "
+      "without the perfetto scripts might not work.\n"
+      "torq can download the perfetto scripts to '%s'. "
+      "Are you ok with this download? [Y/N]: " %
+      (ANDROID_PERFETTO_TOOLS_DIR, TORQ_TEMP_DIR),
+      "Please accept or reject the download.", {
+          "y": download_accepted_callback,
+          "n": rejected_callback
+      }).handle_input())
+
 
 def open_trace(path, origin, use_trace_processor):
   PORT = 9001
@@ -103,12 +106,13 @@ def open_trace(path, origin, use_trace_processor):
   if isinstance(trace_processor_path, ValidationError):
     return trace_processor_path
   if trace_processor_path is not None:
-    process = subprocess.Popen("%s --httpd %s" % (trace_processor_path, path),
-                               shell=True, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        "%s --httpd %s" % (trace_processor_path, path),
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
     print("\033[93m##### Loading trace. #####")
-    if wait_for_output("Trace loaded", process,
-                       WAIT_FOR_TRACE_PROCESSOR_MS):
+    if wait_for_output("Trace loaded", process, WAIT_FOR_TRACE_PROCESSOR_MS):
       process.kill()
       return ValidationError("Trace took too long to load.",
                              "Please try again.")
@@ -117,7 +121,7 @@ def open_trace(path, origin, use_trace_processor):
           "exit out of torq until you are done viewing the trace. Press "
           "CTRL+C to exit torq and close the trace_processor. #####\033[0m")
     wait_for_process_or_ctrl_c(process)
-  else: # Open trace directly in UI
+  else:  # Open trace directly in UI
 
     def handle_timeout(self):
       self.timed_out = True
