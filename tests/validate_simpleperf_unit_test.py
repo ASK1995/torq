@@ -21,6 +21,7 @@ import os
 import subprocess
 from unittest import mock
 from src.torq import create_parser, verify_args
+from tests.test_utils import parse_cli
 
 TORQ_TEMP_DIR = "/tmp/.torq"
 ANDROID_BUILD_TOP = "/folder"
@@ -29,10 +30,6 @@ SYMBOLS_PATH = "/folder/symbols"
 
 
 class ValidateSimpleperfUnitTest(unittest.TestCase):
-
-  def set_up_parser(self, command_string):
-    sys.argv = command_string.split()
-    return create_parser()
 
   @mock.patch.object(os.path, "exists", autospec=True)
   @mock.patch.object(os.path, "isdir", autospec=True)
@@ -45,10 +42,9 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
   def test_create_parser_valid_symbols(self, mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_exists.return_value = True
-    parser = self.set_up_parser("torq.py -p simpleperf "
-                                "--symbols %s" % SYMBOLS_PATH)
+    args = parse_cli("torq -p simpleperf "
+                     "--symbols %s" % SYMBOLS_PATH)
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error, None)
@@ -68,9 +64,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
       self, mock_isdir, mock_exists):
     mock_isdir.return_value = True
     mock_exists.return_value = True
-    parser = self.set_up_parser("torq.py -p simpleperf")
+    args = parse_cli("torq -p simpleperf")
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error, None)
@@ -86,9 +81,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
       self, mock_isdir, mock_exists):
     mock_isdir.return_value = False
     mock_exists.return_value = False
-    parser = self.set_up_parser("torq.py -p simpleperf")
+    args = parse_cli("torq -p simpleperf")
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(
@@ -108,10 +102,9 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
       self, mock_isdir, mock_exists):
     mock_isdir.return_value = False
     mock_exists.return_value = False
-    parser = self.set_up_parser("torq.py -p simpleperf "
-                                "--symbols %s" % SYMBOLS_PATH)
+    args = parse_cli("torq -p simpleperf "
+                     "--symbols %s" % SYMBOLS_PATH)
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error.message, ("%s is not a valid path." % SYMBOLS_PATH))
@@ -129,9 +122,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
       self, mock_isdir, mock_exists):
     mock_isdir.return_value = False
     mock_exists.return_value = False
-    parser = self.set_up_parser("torq.py -p simpleperf")
+    args = parse_cli("torq -p simpleperf")
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error.message, "ANDROID_PRODUCT_OUT is not set.")
@@ -155,9 +147,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     mock_input.return_value = "y"
     mock_exists.side_effect = [False, True]
     mock_subprocess_run.return_value = None
-    parser = self.set_up_parser("torq.py -p simpleperf")
+    args = parse_cli("torq -p simpleperf")
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error, None)
@@ -177,10 +168,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     mock_input.return_value = "y"
     mock_exists.side_effect = [False, False, False]
     mock_subprocess_run.return_value = None
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
-                                SYMBOLS_PATH)
+    args = parse_cli("torq -p simpleperf --symbols %s" % SYMBOLS_PATH)
 
-    args = parser.parse_args()
     with self.assertRaises(Exception) as e:
       args, error = verify_args(args)
 
@@ -200,10 +189,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     mock_isdir.return_value = True
     mock_input.return_value = "bad-input"
     mock_exists.side_effect = [False, False]
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
-                                SYMBOLS_PATH)
+    args = parse_cli("torq -p simpleperf --symbols %s" % SYMBOLS_PATH)
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error.message, "Invalid inputs.")
@@ -223,10 +210,8 @@ class ValidateSimpleperfUnitTest(unittest.TestCase):
     mock_isdir.return_value = True
     mock_input.return_value = "n"
     mock_exists.side_effect = [False, False]
-    parser = self.set_up_parser("torq.py -p simpleperf --symbols %s" %
-                                SYMBOLS_PATH)
+    args = parse_cli("torq -p simpleperf --symbols %s" % SYMBOLS_PATH)
 
-    args = parser.parse_args()
     args, error = verify_args(args)
 
     self.assertEqual(error.message, "Did not download simpleperf scripts.")

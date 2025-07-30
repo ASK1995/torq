@@ -36,7 +36,10 @@ py_library(
 py_test(
     name = "torq_unit_test",
     srcs = ["tests/torq_unit_test.py"],
-    deps = [":torq_lib"],
+    deps = [
+        ":torq_lib",
+        ":torq_test_lib",
+    ],
 )
 
 py_test(
@@ -72,7 +75,10 @@ py_test(
 py_test(
     name = "validate_simpleperf_unit_test",
     srcs = ["tests/validate_simpleperf_unit_test.py"],
-    deps = [":torq_lib"],
+    deps = [
+        ":torq_lib",
+        ":torq_test_lib",
+    ],
 )
 
 py_test(
