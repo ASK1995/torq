@@ -14,4 +14,63 @@
 # limitations under the License.
 #
 
+import signal
+
+from abc import ABC, abstractmethod
+
 ANDROID_SDK_VERSION_T = 33
+
+
+class Command(ABC):
+  """
+  Abstract base class representing a command.
+  """
+
+  def __init__(self, type):
+    self.type = type
+    self.command_executor = None
+
+  def get_type(self):
+    return self.type
+
+  def execute(self, device):
+    return self.command_executor.execute(self, device)
+
+  @abstractmethod
+  def validate(self, device):
+    raise NotImplementedError
+
+
+class CommandExecutor(ABC):
+  """
+  Abstract base class representing a command executor.
+  """
+
+  def __init__(self):
+    pass
+
+  def execute(self, command, device):
+    for sig in [signal.SIGINT, signal.SIGTERM]:
+      signal.signal(sig, lambda s, f: self.signal_handler(s, f))
+    error = device.check_device_connection()
+    if error is not None:
+      return error
+    device.root_device()
+    error = command.validate(device)
+    if error is not None:
+      return error
+    return self.execute_command(command, device)
+
+  @abstractmethod
+  def execute_command(self, command, device):
+    raise NotImplementedError
+
+  def signal_handler(self, sig, frame):
+    pass
+
+
+class ValidationError:
+
+  def __init__(self, message, suggestion):
+    self.message = message
+    self.suggestion = suggestion

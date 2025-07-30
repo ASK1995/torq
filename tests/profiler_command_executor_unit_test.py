@@ -20,9 +20,9 @@ import signal
 import subprocess
 import time
 from unittest import mock
+from src.base import ValidationError
 from src.device import AdbDevice
 from src.profiler import (DEFAULT_DUR_MS, DEFAULT_OUT_DIR, ProfilerCommand)
-from src.validation_error import ValidationError
 from tests.test_utils import parameterized_profiler
 
 PROFILER_COMMAND_TYPE = "profiler"

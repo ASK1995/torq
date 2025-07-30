@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from .validation_error import ValidationError
+from .base import ValidationError
 
 
 class HandleInput:

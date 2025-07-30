@@ -19,8 +19,8 @@ import os
 import subprocess
 import sys
 import time
+from .base import ValidationError
 from .handle_input import HandleInput
-from .validation_error import ValidationError
 
 ADB_ROOT_TIMED_OUT_LIMIT_SECS = 5
 ADB_BOOT_COMPLETED_TIMED_OUT_LIMIT_SECS = 30

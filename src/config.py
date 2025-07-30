@@ -17,11 +17,8 @@
 import os
 import subprocess
 
-from .base import ANDROID_SDK_VERSION_T
-from .command import Command
-from .command_executor import CommandExecutor
+from .base import ANDROID_SDK_VERSION_T, Command, CommandExecutor, ValidationError
 from .config_builder import PREDEFINED_PERFETTO_CONFIGS
-from .validation_error import ValidationError
 
 
 def add_config_parser(subparsers):
@@ -139,6 +136,11 @@ def create_config_command(args):
   command = ConfigCommand(type, config_name, file_path, dur_ms,
                           excluded_ftrace_events, included_ftrace_events)
   return command
+
+
+def execute_config_command(args, device):
+  command = create_config_command(args)
+  return command.execute(device)
 
 
 class ConfigCommand(Command):

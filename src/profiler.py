@@ -19,9 +19,7 @@ import datetime
 import os
 import time
 
-from .base import ANDROID_SDK_VERSION_T
-from .command import Command
-from .command_executor import CommandExecutor
+from .base import ANDROID_SDK_VERSION_T, Command, CommandExecutor, ValidationError
 from .config import PREDEFINED_PERFETTO_CONFIGS
 from .config_builder import build_custom_config
 from .device import SIMPLEPERF_TRACE_FILE, POLLING_INTERVAL_SECS
@@ -29,7 +27,6 @@ from .handle_input import HandleInput
 from .open_ui_utils import open_trace, WEB_UI_ADDRESS
 from .utils import convert_simpleperf_to_gecko
 from .validate_simpleperf import verify_simpleperf_args
-from .validation_error import ValidationError
 
 DEFAULT_DUR_MS = 10000
 DEFAULT_OUT_DIR = "."
@@ -298,6 +295,17 @@ def verify_profiler_args(args):
     args.scripts_path = None
 
   return args, None
+
+
+def execute_profiler_command(args, device):
+  command = ProfilerCommand("profiler", args.event, args.profiler, args.out_dir,
+                            args.dur_ms, args.app, args.runs,
+                            args.simpleperf_event, args.perfetto_config,
+                            args.between_dur_ms, args.ui,
+                            args.excluded_ftrace_events,
+                            args.included_ftrace_events, args.from_user,
+                            args.to_user, args.scripts_path, args.symbols)
+  return command.execute(device)
 
 
 class ProfilerCommand(Command):

@@ -15,8 +15,7 @@
 #
 
 import argparse
-from .command import Command
-from .validation_error import ValidationError
+from .base import Command, ValidationError
 
 TRACED_ENABLE_PROP = "persist.traced.enable"
 TRACED_RELAY_PRODUCER_PORT_PROP = "traced.relay_producer_port"
@@ -65,6 +64,10 @@ def add_vm_parser(subparsers):
       'disable', help=('Disable traced\'s relay producer port'))
 
 
+def verify_vm_args(args):
+  return args, None
+
+
 def create_vm_command(args):
   if args.vm_subcommand == 'traced-relay':
     relay_port = None
@@ -79,6 +82,11 @@ def create_vm_command(args):
     relay_prod_port = args.relay_prod_port
   return VmCommand(args.vm_subcommand, args.vm_relay_producer_subcommand, None,
                    relay_prod_port)
+
+
+def execute_vm_command(args, device):
+  command = create_vm_command(args)
+  return command.execute(device)
 
 
 class VmCommand(Command):

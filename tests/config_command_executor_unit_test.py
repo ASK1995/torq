@@ -19,10 +19,10 @@ import subprocess
 import sys
 import io
 from unittest import mock
+from src.base import ValidationError
 from src.config import ConfigCommand, PREDEFINED_PERFETTO_CONFIGS
 from src.device import AdbDevice
 from src.profiler import DEFAULT_DUR_MS
-from src.validation_error import ValidationError
 
 TEST_ERROR_MSG = "test-error"
 TEST_VALIDATION_ERROR = ValidationError(TEST_ERROR_MSG, None)

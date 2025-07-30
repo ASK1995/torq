@@ -15,9 +15,7 @@
 #
 
 import textwrap
-from .validation_error import ValidationError
-
-ANDROID_SDK_VERSION_T = 33
+from .base import ANDROID_SDK_VERSION_T, ValidationError
 
 
 def create_ftrace_events_string(predefined_ftrace_events,

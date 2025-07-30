@@ -14,10 +14,9 @@
 # limitations under the License.
 #
 
-from .command import Command
+from .base import Command, ValidationError
 from .open_ui_utils import open_trace, WEB_UI_ADDRESS
 from .utils import path_exists
-from .validation_error import ValidationError
 
 
 def add_open_parser(subparsers):
@@ -42,6 +41,11 @@ def verify_open_args(args):
         args.file_path, "Make sure your file exists.")
 
   return args, None
+
+
+def execute_open_command(args, device):
+  command = OpenCommand(args.file_path, args.use_trace_processor)
+  return command.execute(device)
 
 
 class OpenCommand(Command):

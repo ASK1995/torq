@@ -16,17 +16,45 @@
 
 import argparse
 
-from .config import (add_config_parser, verify_config_args,
-                     create_config_command, PREDEFINED_PERFETTO_CONFIGS)
+from .config import (add_config_parser, execute_config_command,
+                     verify_config_args, PREDEFINED_PERFETTO_CONFIGS)
 from .device import AdbDevice
-from .open import (add_open_parser, OpenCommand, verify_open_args)
-from .profiler import (add_profiler_parser, verify_profiler_args,
-                       ProfilerCommand)
+from .open import (add_open_parser, execute_open_command, OpenCommand,
+                   verify_open_args)
+from .profiler import (add_profiler_parser, execute_profiler_command,
+                       verify_profiler_args, ProfilerCommand)
 from .utils import set_default_subparser
-from .vm import add_vm_parser, create_vm_command
+from .vm import add_vm_parser, execute_vm_command, verify_vm_args
 
 # Add default parser capability to argparse
 argparse.ArgumentParser.set_default_subparser = set_default_subparser
+
+# Torq supported commands
+#
+# NOTE: Add your new commands here
+#
+TORQ_COMMANDS = {
+    'config': {
+        'parse': add_config_parser,
+        'verify': verify_config_args,
+        'execute': execute_config_command,
+    },
+    'open': {
+        'parse': add_open_parser,
+        'verify': verify_open_args,
+        'execute': execute_open_command,
+    },
+    'profiler': {
+        'parse': add_profiler_parser,
+        'verify': verify_profiler_args,
+        'execute': execute_profiler_command,
+    },
+    'vm': {
+        'parse': add_vm_parser,
+        'verify': verify_vm_args,
+        'execute': execute_vm_command,
+    },
+}
 
 
 def create_parser():
@@ -44,10 +72,8 @@ def create_parser():
 
   subparsers = parser.add_subparsers(dest='subcommands', help='Subcommands')
 
-  add_profiler_parser(subparsers)
-  add_config_parser(subparsers)
-  add_open_parser(subparsers)
-  add_vm_parser(subparsers)
+  for command in TORQ_COMMANDS:
+    TORQ_COMMANDS[command]['parse'](subparsers)
 
   # Set 'profiler' as the default parser
   parser.set_default_subparser('profiler')
@@ -56,41 +82,11 @@ def create_parser():
 
 
 def verify_args(args):
-  match args.subcommands:
-    case "profiler":
-      return verify_profiler_args(args)
-    case "config":
-      return verify_config_args(args)
-    case "open":
-      return verify_open_args(args)
-    case "vm":
-      return args, None
-    case _:
-      raise ValueError("Invalid command type used")
+  return TORQ_COMMANDS[args.subcommands]['verify'](args)
 
 
-def create_profiler_command(args):
-  return ProfilerCommand("profiler", args.event, args.profiler, args.out_dir,
-                         args.dur_ms, args.app, args.runs,
-                         args.simpleperf_event, args.perfetto_config,
-                         args.between_dur_ms, args.ui,
-                         args.excluded_ftrace_events,
-                         args.included_ftrace_events, args.from_user,
-                         args.to_user, args.scripts_path, args.symbols)
-
-
-def get_command(args):
-  match args.subcommands:
-    case "profiler":
-      return create_profiler_command(args)
-    case "config":
-      return create_config_command(args)
-    case "open":
-      return OpenCommand(args.file_path, args.use_trace_processor)
-    case "vm":
-      return create_vm_command(args)
-    case _:
-      raise ValueError("Invalid command type used")
+def execute_command(args, device):
+  return TORQ_COMMANDS[args.subcommands]['execute'](args, device)
 
 
 def print_error(error):
@@ -102,14 +98,15 @@ def print_error(error):
 def run():
   parser = create_parser()
   args = parser.parse_args()
+  if args.subcommands not in TORQ_COMMANDS:
+    raise ValueError('Invalid command type used')
   args, error = verify_args(args)
   if error is not None:
     print_error(error)
     return
-  command = get_command(args)
   serial = args.serial[0] if args.serial else None
   device = AdbDevice(serial)
-  error = command.execute(device)
+  error = execute_command(args, device)
   if error is not None:
     print_error(error)
     return

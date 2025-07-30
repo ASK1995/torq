@@ -18,8 +18,9 @@ import unittest
 import sys
 import os
 from unittest import mock
+from src.config import create_config_command
 from src.profiler import DEFAULT_DUR_MS, DEFAULT_OUT_DIR
-from src.torq import create_parser, verify_args, get_command
+from src.torq import create_parser, verify_args
 
 TEST_USER_ID = 10
 TEST_PACKAGE = "com.android.contacts"
@@ -765,10 +766,9 @@ class TorqUnitTest(unittest.TestCase):
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command(args)
 
     self.assertEqual(error, None)
-    self.assertEqual(command.get_type(), "profiler")
+    self.assertEqual(args.subcommands, "profiler")
 
   def test_create_parser_valid_config_show_values(self):
     parser = self.set_up_parser("torq.py config show default")
@@ -903,7 +903,7 @@ class TorqUnitTest(unittest.TestCase):
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command(args)
+    command = create_config_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "config list")
@@ -913,7 +913,7 @@ class TorqUnitTest(unittest.TestCase):
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command(args)
+    command = create_config_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "config show")
@@ -923,7 +923,7 @@ class TorqUnitTest(unittest.TestCase):
 
     args = parser.parse_args()
     args, error = verify_args(args)
-    command = get_command(args)
+    command = create_config_command(args)
 
     self.assertEqual(error, None)
     self.assertEqual(command.get_type(), "config pull")
