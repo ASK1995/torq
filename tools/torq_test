@@ -53,8 +53,8 @@ if __name__ == "__main__":
     else:
         cmd.append(':all')
 
-    print(f"Command: {" ".join(cmd)}")
-    output = subprocess.run(cmd, capture_output=True)
+    print(f'Command: {" ".join(cmd)}')
+    output = subprocess.run(cmd)
     sys.exit(output.returncode)
 
   # Find the Android.bp file
@@ -87,5 +87,5 @@ if __name__ == "__main__":
 
   cmd = ['atest'] + tests
   # Run atest for all the tests
-  output = subprocess.run(cmd, capture_output=True)
+  output = subprocess.run(cmd)
   sys.exit(output.returncode)
