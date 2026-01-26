@@ -15,12 +15,13 @@
 #
 
 import argparse
-import os
+from pathlib import Path
 
 from .base import ANDROID_SDK_VERSION_T, Command, ValidationError
 from .config_builder import create_common_config_parser, PREDEFINED_PERFETTO_CONFIGS
+from .handle_input import HandleInput
 from .profiler import verify_trigger_args
-from .utils import run_subprocess
+from .utils import run_subprocess, TEXTPROTO_FILE_EXTENSIONS
 
 
 def add_config_parser(subparsers):
@@ -61,6 +62,7 @@ def add_config_parser(subparsers):
   config_pull_parser.add_argument(
       'file_path',
       nargs='?',
+      type=Path,
       help=('File path to copy the predefined'
             ' config to'))
 
@@ -76,15 +78,19 @@ def verify_config_args(args):
 
   if args.config_subcommand == "pull":
     if args.file_path is None:
-      args.file_path = "./" + args.config_name + ".pbtxt"
-    elif not os.path.isfile(args.file_path):
+      args.file_path = Path("./" + args.config_name + ".txtpb")
+    elif not args.file_path.suffix:
+      args.file_path = args.file_path.with_suffix(".txtpb")
+    elif args.file_path.suffix not in TEXTPROTO_FILE_EXTENSIONS:
       return None, ValidationError(
-          ("Command is invalid because %s is not a valid filepath." %
-           args.file_path),
-          ("A default filepath can be used if you do not specify a file-path:\n"
-           "\t torq pull default to copy to ./default.pbtxt\n"
-           "\t torq pull lightweight to copy to ./lightweight.pbtxt\n"
-           "\t torq pull memory to copy to ./memory.pbtxt"))
+          ("File '%s' has invalid file extension: '%s'." %
+           (args.file_path.name, args.file_path.suffix)),
+          ("Provide a filename with one of the supported file extensions: [%s]."
+           % ", ".join(TEXTPROTO_FILE_EXTENSIONS)))
+    if args.file_path.is_dir():
+      return None, ValidationError(
+          ("File path '%s' is a directory." % args.file_path),
+          "Provide a path to a file.")
 
   if args.config_subcommand != "list":
     args.runs = 1
@@ -138,7 +144,16 @@ def execute_show_or_pull_command(command, device):
     return error
 
   if command.get_type() == "config pull":
+    if command.file_path.exists() and not HandleInput(
+        ("The file '%s' exists. Would you like to overwrite it? [Y/n] " %
+         command.file_path), "", {
+             "y": lambda: True,
+             "n": lambda: False
+         }, "y").handle_input():
+      print("Operation cancelled.")
+      return None
     run_subprocess(("cat > %s %s" % (command.file_path, config)), shell=True)
+    print("The config has been saved to '%s'." % command.file_path)
   else:
     print("\n".join(config.strip().split("\n")[2:-2]))
   return None
