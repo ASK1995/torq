@@ -39,6 +39,17 @@ class AdbDevice:
     self.serial = serial
 
   @staticmethod
+  def adb_exists():
+    # adb returns 1 when it runs, so ignore this error code.
+    return not run_subprocess(
+        "adb",
+        capture_output=True,
+        shell=True,
+        ignore_returncodes=[
+            ShellExitCodes.EX_FAILURE, ShellExitCodes.EX_NOTFOUND
+        ]).returncode == ShellExitCodes.EX_NOTFOUND
+
+  @staticmethod
   def get_adb_devices():
     """
     Returns a list of devices connected to the adb bridge.
@@ -59,6 +70,8 @@ class AdbDevice:
     return devices
 
   def check_device_connection(self):
+    if not AdbDevice.adb_exists():
+      return ValidationError("adb could not be found on the host device.", None)
     devices = self.get_adb_devices()
     if len(devices) == 0:
       return ValidationError("There are currently no devices connected.", None)

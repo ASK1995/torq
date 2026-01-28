@@ -923,6 +923,15 @@ class DeviceUnitTest(unittest.TestCase):
 
     self.assertFalse(adbDevice.file_exists("perfetto"))
 
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def test_adb_exists(self, mock_subprocess_run):
+    mock_subprocess_run.return_value = (
+        generate_mock_completed_process(
+            returncode=ShellExitCodes.EX_NOTFOUND.value))
+    adbDevice = AdbDevice(TEST_DEVICE_SERIAL)
+
+    self.assertFalse(adbDevice.adb_exists())
+
 
 if __name__ == '__main__':
   unittest.main()
