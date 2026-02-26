@@ -122,3 +122,18 @@ py_test(
         ":torq_test_lib",
     ],
 )
+
+py_test(
+    name = "test_android_integration",
+    srcs = ["tests/test_android_integration.py"],
+    data = [":torq"],  # Ensure the binary is available to the test
+    deps = [
+        ":torq_lib",
+        ":torq_test_lib",
+    ],
+    # 'manual' keeps it out of the default unit-test run
+    # 'integration' allows us to target it specifically
+    # 'external' and 'local' help with device/PATH access
+    tags = ["manual", "integration", "external"],
+    local = True,
+)
