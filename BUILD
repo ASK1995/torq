@@ -122,3 +122,12 @@ py_test(
         ":torq_test_lib",
     ],
 )
+
+py_test(
+    name = "test_android_integration",
+    srcs = ["tests/test_android_integration.py"],
+    deps = [
+        ":torq_lib",
+        ":torq_test_lib",
+    ],
+)
