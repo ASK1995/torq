@@ -43,15 +43,14 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run torq tests.")
     group = parser.add_mutually_exclusive_group()
 
-    group.add_argument(
-        "--unit", action="store_true", help="Run unit tests."
-    )
-    group.add_argument(
-        "--integration", action="store_true", help="Run integration tests."
-    )
-    group.add_argument(
-        "--all", action="store_true", help="Run all tests (unit + integration)."
-    )
+    group.add_argument("--unit", action="store_const", dest='test_mode',
+                       const='unit', help="Run unit tests.")
+    group.add_argument("--integration", action="store_const", dest='test_mode',
+                       const='integration', help="Run integration tests.")
+    group.add_argument("--all", action="store_const", dest='test_mode',
+                       const='all', help="Run all tests (unit + integration).")
+    parser.set_defaults(test_mode='unit')
+
     parser.add_argument(
         "remaining",
         nargs="*",
@@ -61,44 +60,20 @@ def parse_args():
 
 def run_tests(args):
     """Executes tests based on the flags provided."""
+
+    cmd = ["bazel", "test", "--test_output=errors"]
     
-    # Default to unit tests if no specific mode is selected
-    if not (args.unit or args.integration or args.all):
-        args.unit = True
-
-    cmd = ["bazel", "test"]
-    targets = []
-    tag_filters = []
-
+    if args.test_mode != "all":
+      cmd.append(f"--test_tag_filters={args.test_mode}")
+    
     env_path = f"--action_env=PATH={os.environ.get('PATH', '')}"
+    
+    if args.test_mode == "integration" or args.test_mode == "all":
+        cmd.extend([env_path,])
+        
+    cmd.extend(args.remaining if args.remaining else ["//:all"])
 
-    if args.all:
-        mode_str = "All"
-        targets = ["//...", "//:test_android_integration"]
-        cmd.extend([
-            "--test_output=errors",
-            env_path,
-        ])
-    elif args.integration:
-        mode_str = "Integration"
-        targets = ["//:test_android_integration"]
-        cmd.extend([
-            "--test_output=all",
-            "--nocache_test_results",
-            env_path,
-        ])
-    else:
-        mode_str = "Unit"
-        tag_filters.append("-integration")
-        targets = args.remaining if args.remaining else ["//..."]
-        cmd.append("--test_output=errors")
-
-    if tag_filters:
-        cmd.append(f"--test_tag_filters={','.join(tag_filters)}")
-
-    cmd.extend(targets)
-
-    print(f"\n--- Running {mode_str} Tests: {', '.join(targets)} ---")
+    print(f"\n--- Running {args.test_mode} Tests: ---")
 
     result = subprocess.run(cmd)
     return result.returncode

@@ -14,12 +14,15 @@
 # limitations under the License.
 #
 
+import io
+import re
 import unittest
 import os
 import shutil
 import time
-from pathlib import Path
 
+from pathlib import Path
+from contextlib import redirect_stderr, redirect_stdout
 from src.shell import AdbShell
 from tests.test_utils import run_cli
 
@@ -28,10 +31,13 @@ class TorqIntegrationTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    """Basic and Sanity Checks: Ensure required executables are present."""
     if not AdbShell.adb_exists():
       raise RuntimeError(
           "Missing required executable: adb. Ensure it is in your PATH.")
+
+    cls.serial = cls._get_adb_device()
+    if not cls.serial:
+      raise RuntimeError("No active adb devices found via 'adb devices'.")
 
     base_path = Path(os.environ.get('TEST_TMPDIR', '/tmp'))
     cls.parent_tmp_dir = base_path / f"torq-integration-test-{time.time_ns()}"
@@ -39,12 +45,11 @@ class TorqIntegrationTest(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    """Cleanup the temporary directory structure."""
     if hasattr(cls, 'parent_tmp_dir') and cls.parent_tmp_dir.exists():
       shutil.rmtree(cls.parent_tmp_dir)
 
-  def _get_adb_device(self):
-    """Finds available adb devices and returns the serial of the first one."""
+  @classmethod
+  def _get_adb_device(cls):
     devices = AdbShell.get_adb_devices()
 
     if not devices:
@@ -55,25 +60,43 @@ class TorqIntegrationTest(unittest.TestCase):
     return selected_device
 
   def setUp(self):
-    """Create sub-directory for the specific test run."""
     self.test_run_dir = self.parent_tmp_dir / self._testMethodName
     self.test_run_dir.mkdir(parents=True, exist_ok=True)
 
   def test_torq_basic_perfetto(self):
-    """Basic Android integration test run."""
-    serial = self._get_adb_device()
-    if not serial:
-      self.skipTest("No active adb devices found via 'adb devices'.")
+    output_io = io.StringIO()
 
-    cmd = f"torq --serial {serial} -d 3000 --no-ui -o {self.test_run_dir}"
+    try:
+      with redirect_stdout(output_io), redirect_stderr(output_io):
+        run_cli(f"torq --serial {TorqIntegrationTest.serial} -d 3000 "
+                f"--no-ui -o {self.test_run_dir}")
+    except SystemExit as e:
+      if e.code != 0:
+        self.fail(f"Torq exited with error code {e.code}."
+                  f"Logs:\n{output_io.getvalue()}")
+    except Exception as e:
+      self.fail(f"Torq crashed with an unexpected exception: {e}")
+    finally:
+      output_text = output_io.getvalue()
 
-    start_time = time.time()
-    run_cli(cmd)
-    duration = time.time() - start_time
+    error_keywords = ["Error:", "Exception:", "Failed to", "adb: error:"]
+    for keyword in error_keywords:
+      self.assertNotIn(
+          keyword, output_text, f"Found '{keyword}' in output.\n"
+          f"Full Logs: {output_text}")
 
-    self.assertGreater(
-        duration, 3.0,
-        f"Test finished too quickly in {duration:.2f}s (expected >3s).")
+    self.assertIn("Performing run ", output_text)
+
+    duration_match = re.search(r"Run lasted for (\d+\.\d+) seconds\.",
+                               output_text)
+    self.assertIsNotNone(
+        duration_match,
+        f"Could not find duration summary in output.\nFull Logs: {output_text}")
+
+    actual_duration = float(duration_match.group(1))
+    self.assertGreaterEqual(
+        actual_duration, 3.0,
+        f"Torq reported a duration of {actual_duration}s (expected >= 3.0s).")
 
     trace_files = list(self.test_run_dir.glob("*.perfetto-trace"))
     self.assertEqual(
@@ -81,9 +104,9 @@ class TorqIntegrationTest(unittest.TestCase):
         f"Expected 1 .perfetto-trace file in {self.test_run_dir}, found {len(trace_files)}"
     )
 
-    for trace in trace_files:
-      file_size = trace.stat().st_size
-      self.assertGreater(file_size, 0, f"Trace file {trace.name} is empty.")
+    trace = trace_files[0]
+    file_size = trace.stat().st_size
+    self.assertGreater(file_size, 0, f"Trace file {trace.name} is empty.")
 
 
 if __name__ == "__main__":

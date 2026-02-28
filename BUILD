@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     https://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,6 +36,7 @@ py_library(
 py_test(
     name = "torq_unit_test",
     srcs = ["tests/torq_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -45,6 +46,7 @@ py_test(
 py_test(
     name = "device_unit_test",
     srcs = ["tests/device_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -54,6 +56,7 @@ py_test(
 py_test(
     name = "config_builder_unit_test",
     srcs = ["tests/config_builder_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -63,6 +66,7 @@ py_test(
 py_test(
     name = "profiler_command_executor_unit_test",
     srcs = ["tests/profiler_command_executor_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -72,6 +76,7 @@ py_test(
 py_test(
     name = "config_command_executor_unit_test",
     srcs = ["tests/config_command_executor_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -81,6 +86,7 @@ py_test(
 py_test(
     name = "validate_simpleperf_unit_test",
     srcs = ["tests/validate_simpleperf_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -90,6 +96,7 @@ py_test(
 py_test(
     name = "utils_unit_test",
     srcs = ["tests/utils_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -99,6 +106,7 @@ py_test(
 py_test(
     name = "open_ui_unit_test",
     srcs = ["tests/open_ui_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -108,6 +116,7 @@ py_test(
 py_test(
     name = "vm_unit_test",
     srcs = ["tests/vm_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -117,6 +126,7 @@ py_test(
 py_test(
     name = "trigger_unit_test",
     srcs = ["tests/trigger_unit_test.py"],
+    tags = ["unit"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
@@ -126,14 +136,11 @@ py_test(
 py_test(
     name = "test_android_integration",
     srcs = ["tests/test_android_integration.py"],
-    data = [":torq"],  # Ensure the binary is available to the test
+    data = [":torq"],
     deps = [
         ":torq_lib",
         ":torq_test_lib",
     ],
-    # 'manual' keeps it out of the default unit-test run
-    # 'integration' allows us to target it specifically
-    # 'external' and 'local' help with device/PATH access
-    tags = ["manual", "integration", "external"],
+    tags = ["integration", "external"],
     local = True,
 )
